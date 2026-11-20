@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Frikaz S.A.S. Brand Palette */
+  --color-frikaz-red: #D61F26;
+  --color-frikaz-red-hover: #B3161C;
+  --color-frikaz-red-dark: #8F1116;
+  --color-frikaz-red-light: #FEF2F2;
+  --color-frikaz-red-tint: #FEE2E2;
+  --color-frikaz-red-border: #FCA5A5;
+
+  --color-frikaz-yellow: #FACC15;
+  --color-frikaz-yellow-hover: #EAB308;
+  --color-frikaz-yellow-soft: #FEF9C3;
+  --color-frikaz-yellow-pale: #FFFBEB;
+  --color-frikaz-yellow-border: #FDE047;
+
+  --color-frikaz-navy: #0F294A;
+  --color-frikaz-navy-deep: #091A32;
+  --color-frikaz-navy-mid: #163A66;
+  --color-frikaz-navy-soft: #EFF6FF;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes frikaz-chip-pop {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(var(--rot-start, 0deg)) scale(0.45);
+  }
+  20% {
+    opacity: 1;
+    transform: translate3d(calc(var(--chip-dx, 18px) * 0.36), var(--chip-jump-y, -48px), 0)
+      rotate(var(--rot-peak, 55deg)) scale(1.06);
+  }
+  58% {
+    opacity: 0.96;
+    transform: translate3d(calc(var(--chip-dx, 18px) * 0.78), calc(var(--chip-jump-y, -48px) * 1.1), 0)
+      rotate(calc(var(--rot-peak, 55deg) * 1.35)) scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--chip-dx, 18px), var(--chip-fall-y, 16px), 0)
+      rotate(var(--rot-end, 130deg)) scale(0.7);
+  }
+}
+
+.frikaz-chip-particle {
+  animation-name: frikaz-chip-pop;
+  animation-timing-function: cubic-bezier(0.22, 0.72, 0.32, 1);
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .frikaz-chip-particle {
+    display: none !important;
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Manual De Bienestar ",
+  "description": "Plataforma interactiva para gestionar y optimizar el proceso de bienestar social laboral y talento humano en Frikaz S.A.S.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

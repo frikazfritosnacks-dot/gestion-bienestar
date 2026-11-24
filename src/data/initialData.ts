@@ -1,4 +1,12 @@
 import { BienestarState } from '../types/bienestar';
+import {
+  ACTIVIDADES_INICIALES,
+  CONVENIOS_INICIALES,
+  LISTAS_ASISTENCIA_INICIALES,
+  PLAN_GENERAL_INITIAL,
+  PRESUPUESTO_GENERAL_2027_INITIAL,
+  RESPUESTAS_ENCUESTAS_INICIALES,
+} from './planBienestarData';
 
 export const INITIAL_BIENESTAR_STATE: BienestarState = {
   lastUpdated: '2026-11-13T10:00:00.000Z',
@@ -10,6 +18,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       version: '01',
       fechaActualizacion: '13/11/2026',
       areaResponsable: 'Gestión del Talento Humano',
+      elaboradoPor: '',
+      revisadoPor: '',
+      aprobadoPor: '',
     },
     introduccion:
       'El presente manual tiene como propósito establecer los lineamientos y procedimientos necesarios para desarrollar actividades orientadas al bienestar integral de los trabajadores de Frikaz S.A.S., considerando sus necesidades sociales, personales y laborales.\n\nA través de este documento se busca promover de forma estructurada espacios de participación, integración, reconocimiento y acompañamiento, contribuyendo al fortalecimiento del clima organizacional, la calidad de vida laboral y el compromiso mutuo entre la organización y sus colaboradores.',
@@ -762,62 +773,12 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       isDecision: false,
     },
   ],
-  planBienestar: [
-    {
-      id: 'prog-1',
-      nombrePrograma: 'Sensibilización e Integración Frikaz S.A.S.',
-      objetivo:
-        'Sensibilizar a los colaboradores sobre los programas de bienestar y fortalecer la cohesión social entre áreas administrativas, operativas y logísticas.',
-      actividad: 'Jornada de Integración, Reconocimiento y Socialización del Plan',
-      descripcion:
-        'Encuentro presencial con dinámicas de trabajo en equipo, reconocimiento a colaboradores destacados y presentación del portafolio anual de bienestar e incentivos.',
-      poblacionParticipante: 'Todos los colaboradores (Administrativo, Operativo y Logístico)',
-      responsable: 'Gestión del Talento Humano',
-      fechaEjecucion: '2026-11-27',
-      lugar: 'Sede Principal Frikaz S.A.S. / Salón Social',
-      recursosNecesarios: 'Sonido, material lúdico, refrigerios, diplomas de reconocimiento',
-      presupuesto: 1850000,
-      estadoAprobacion: 'Aprobado',
-      estadoEjecucion: 'Ejecutado',
-      evidencias: 'Lista de asistencia (44/48), registro fotográfico y acta de reconocimiento.',
-    },
-    {
-      id: 'prog-2',
-      nombrePrograma: 'Cuidado Integral y Salud Mental',
-      objetivo:
-        'Promover el autocuidado, la inteligencia emocional, el manejo del estrés y hábitos saludables en el entorno laboral.',
-      actividad: 'Taller de Mindfulness, Equilibrio Emocional y Pausas Activas',
-      descripcion:
-        'Sesiones guiadas con profesional en psicología organizacional enfocadas en respiración consciente, ergonomía y prevención de riesgo psicosocial.',
-      poblacionParticipante: 'Personal Operativo, Logístico y Administrativo',
-      responsable: 'Talento Humano y SST',
-      fechaEjecucion: '2026-12-04',
-      lugar: 'Área de Capacitación Frikaz S.A.S.',
-      recursosNecesarios: 'Facilitador externo, colchonetas, hidratación, guías impresas',
-      presupuesto: 1200000,
-      estadoAprobacion: 'Aprobado',
-      estadoEjecucion: 'En ejecución',
-      evidencias: 'Cronograma aprobado y confirmación de tallerista.',
-    },
-    {
-      id: 'prog-3',
-      nombrePrograma: 'Equilibrio Vida - Trabajo y Familia',
-      objetivo:
-        'Fomentar la armonía familiar, el sentido de pertenencia y el aprovechamiento saludable del tiempo libre conforme a la Ley 1857 de 2017.',
-      actividad: 'Encuentro Recreativo Día de la Familia Frikaz S.A.S.',
-      descripcion:
-        'Actividad campestre de recreación, deporte y esparcimiento junto con el núcleo familiar de los trabajadores en articulación con la Caja de Compensación.',
-      poblacionParticipante: 'Colaboradores de Frikaz S.A.S. y sus familias',
-      responsable: 'Talento Humano / Caja de Compensación',
-      fechaEjecucion: '2026-12-18',
-      lugar: 'Centro Recreacional Convenio',
-      recursosNecesarios: 'Transporte, refrigerios, póliza, recreacionistas, premiación',
-      presupuesto: 3400000,
-      estadoAprobacion: 'Pendiente',
-      estadoEjecucion: 'Planeado',
-      evidencias: 'Cotización en revisión por Contabilidad y Gerencia.',
-    },
-  ],
+  planGeneral: PLAN_GENERAL_INITIAL,
+  planBienestar: ACTIVIDADES_INICIALES,
+  presupuestoGeneral2027: PRESUPUESTO_GENERAL_2027_INITIAL,
+  respuestasEncuestas: RESPUESTAS_ENCUESTAS_INICIALES,
+  listasAsistencia: LISTAS_ASISTENCIA_INICIALES,
+  convenios: CONVENIOS_INICIALES,
   seguimiento: [
     {
       id: 'seg-1',

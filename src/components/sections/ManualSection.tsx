@@ -1,11 +1,23 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Check, X, Plus, Trash2, FileText } from 'lucide-react';
+import {
+  Pencil,
+  Check,
+  X,
+  Plus,
+  Trash2,
+  FileText,
+  FileDown,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle2,
+} from 'lucide-react';
 import { useBienestar } from '../../context/BienestarContext';
 import { ManualSubSectionId } from '../../types/bienestar';
 import { NormogramaManager } from '../manual/NormogramaManager';
 import { TerminologiaManager } from '../manual/TerminologiaManager';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import { ChipSvg } from '../ui/ChipGraphics';
+import { buildWordFilename, generateManualWordBlob } from '../../utils/wordManualGenerator';
 
 interface ManualSectionProps {
   activeSubTab: ManualSubSectionId;
@@ -29,7 +41,12 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
     addObjetivoEspecifico,
     updateObjetivoEspecifico,
     deleteObjetivoEspecifico,
+    hasPendingWordSync,
+    syncWordDocument,
+    notify,
   } = useBienestar();
+
+  const [downloadingWord, setDownloadingWord] = useState(false);
 
   // Encabezado documental del manual (sin subapartado independiente de portada)
   const [editingHeaderMeta, setEditingHeaderMeta] = useState(false);
@@ -38,6 +55,40 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
   useEffect(() => {
     setHeaderMetaForm(state.manual.portada);
   }, [state.manual.portada]);
+
+  const handleDownloadWord = async () => {
+    if (downloadingWord) return;
+    setDownloadingWord(true);
+    try {
+      if (hasPendingWordSync) {
+        syncWordDocument(true);
+      }
+      const blob = await generateManualWordBlob(state);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = buildWordFilename(state);
+      anchor.click();
+      URL.revokeObjectURL(url);
+      notify('Manual en formato Microsoft Word (.docx) descargado con la información vigente.');
+    } catch {
+      notify('No fue posible generar el archivo Word. Inténtalo nuevamente.', 'warning');
+    } finally {
+      setDownloadingWord(false);
+    }
+  };
+
+  const formattedSyncDate = (() => {
+    const raw = state.wordSync?.lastSyncedAt || state.lastUpdated;
+    try {
+      return new Intl.DateTimeFormat('es-CO', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date(raw));
+    } catch {
+      return state.manual.portada.fechaActualizacion;
+    }
+  })();
 
   // Edición de secciones de texto (introducción, objetivo general, justificación, alcance)
   const [editingTextTab, setEditingTextTab] = useState<string | null>(null);
@@ -244,6 +295,48 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-mono text-sm"
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[#0F294A]">
+                  Elaborado por
+                </label>
+                <input
+                  type="text"
+                  value={headerMetaForm.elaboradoPor || ''}
+                  onChange={(e) =>
+                    setHeaderMetaForm({ ...headerMetaForm, elaboradoPor: e.target.value })
+                  }
+                  placeholder="Cargo o responsable"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[#0F294A]">
+                  Revisado por
+                </label>
+                <input
+                  type="text"
+                  value={headerMetaForm.revisadoPor || ''}
+                  onChange={(e) =>
+                    setHeaderMetaForm({ ...headerMetaForm, revisadoPor: e.target.value })
+                  }
+                  placeholder="Cargo o responsable"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-[#0F294A]">
+                  Aprobado por
+                </label>
+                <input
+                  type="text"
+                  value={headerMetaForm.aprobadoPor || ''}
+                  onChange={(e) =>
+                    setHeaderMetaForm({ ...headerMetaForm, aprobadoPor: e.target.value })
+                  }
+                  placeholder="Cargo o responsable de aprobación"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <button
@@ -265,41 +358,115 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
             </div>
           </form>
         ) : (
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#FACC15] bg-[#FEF9C3] text-[#D61F26]">
-                <FileText className="h-5 w-5" />
+          <div className="space-y-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#FACC15] bg-[#FEF9C3] text-[#D61F26]">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#D61F26]">
+                    <span>{state.manual.portada.empresa}</span>
+                    <span aria-hidden="true">·</span>
+                    <span className="text-[#0F294A]">{state.manual.portada.areaResponsable}</span>
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <h1 className="text-lg font-extrabold text-[#0F294A] sm:text-xl">
+                      {state.manual.portada.nombreDocumento}
+                    </h1>
+                    <ChipSvg variant="ondulada" className="hidden sm:block h-6 w-6 shrink-0" />
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600 font-mono tabular-nums">
+                    <span>Código: {state.manual.portada.codigoDocumental}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>Versión: {state.manual.portada.version}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>Actualización: {state.manual.portada.fechaActualizacion}</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#D61F26]">
-                  <span>{state.manual.portada.empresa}</span>
-                  <span aria-hidden="true">·</span>
-                  <span className="text-[#0F294A]">{state.manual.portada.areaResponsable}</span>
-                </div>
-                <div className="mt-0.5 flex items-center gap-2">
-                  <h1 className="text-lg font-extrabold text-[#0F294A] sm:text-xl">
-                    {state.manual.portada.nombreDocumento}
-                  </h1>
-                  <ChipSvg variant="ondulada" className="hidden sm:block h-6 w-6 shrink-0" />
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600 font-mono tabular-nums">
-                  <span>Código: {state.manual.portada.codigoDocumental}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>Versión: {state.manual.portada.version}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>Actualización: {state.manual.portada.fechaActualizacion}</span>
-                </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleDownloadWord}
+                  disabled={downloadingWord}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#0F294A] border-b-2 border-[#FACC15] px-4 py-2.5 text-xs font-bold tracking-wide text-white shadow-xs transition-all duration-150 hover:bg-[#D61F26] hover:-translate-y-0.5 disabled:opacity-60 whitespace-nowrap shrink-0"
+                >
+                  <FileDown className="h-4 w-4 text-[#FACC15]" />
+                  {downloadingWord ? 'GENERANDO WORD...' : 'DESCARGAR MANUAL EN WORD'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingHeaderMeta(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2.5 text-xs font-semibold text-[#0F294A] transition-all duration-150 hover:bg-[#FDE047] whitespace-nowrap shrink-0"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-[#D61F26]" />
+                  Editar caja de calidad
+                </button>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setEditingHeaderMeta(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2 text-xs font-semibold text-[#0F294A] transition-all duration-150 hover:bg-[#FDE047] whitespace-nowrap shrink-0 self-start sm:self-center"
-            >
-              <Pencil className="h-3.5 w-3.5 text-[#D61F26]" />
-              Editar datos del documento
-            </button>
+            {/* Caja de calidad y control de versiones / sincronización Word */}
+            <div className="grid grid-cols-1 gap-3 border-t border-[#FCA5A5]/60 pt-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg border border-slate-200/80 bg-white px-3.5 py-2.5">
+                <p className="text-[11px] font-semibold text-slate-500">Elaborado / Revisado / Aprobado</p>
+                <p className="mt-0.5 text-xs font-semibold text-[#0F294A] truncate">
+                  {state.manual.portada.elaboradoPor || 'Sin registrar'} ·{' '}
+                  {state.manual.portada.revisadoPor || 'Sin registrar'} ·{' '}
+                  {state.manual.portada.aprobadoPor || 'Sin registrar'}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200/80 bg-white px-3.5 py-2.5">
+                <p className="text-[11px] font-semibold text-slate-500">Versión del documento</p>
+                <p className="mt-0.5 font-mono text-xs font-bold text-[#0F294A] tabular-nums">
+                  v{state.manual.portada.version} · {state.normograma.length} normas · {state.terminologia.length} términos
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200/80 bg-white px-3.5 py-2.5">
+                <p className="text-[11px] font-semibold text-slate-500">Última sincronización Word</p>
+                <p className="mt-0.5 text-xs font-semibold text-[#0F294A] tabular-nums">
+                  {formattedSyncDate}
+                </p>
+              </div>
+              <div
+                className={`flex items-center justify-between gap-2 rounded-lg border px-3.5 py-2.5 ${
+                  hasPendingWordSync
+                    ? 'border-[#FACC15] bg-[#FEF9C3] text-[#0F294A]'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {hasPendingWordSync ? (
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-[#D61F26]" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold truncate">
+                      {hasPendingWordSync
+                        ? 'Cambios pendientes de sincronización'
+                        : 'Word sincronizado'}
+                    </p>
+                    <p className="text-[10px] opacity-80 truncate">
+                      {hasPendingWordSync
+                        ? 'Se actualizará antes de descargar'
+                        : 'Formato APA 7ª ed. vigente'}
+                    </p>
+                  </div>
+                </div>
+                {hasPendingWordSync && (
+                  <button
+                    type="button"
+                    onClick={() => syncWordDocument(false)}
+                    className="inline-flex items-center gap-1 rounded-md bg-[#D61F26] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#B3161C] whitespace-nowrap shrink-0"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Sincronizar
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </section>

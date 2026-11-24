@@ -69,6 +69,124 @@
   will-change: transform, opacity;
 }
 
+/* Frikaz Official Mascot Image Calm Layered Walk & Hoof-Print Animations */
+@keyframes frikaz-piggy-walk-gait {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-1.8deg);
+  }
+  25% {
+    transform: translate3d(0, -2.5px, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, 0, 0) rotate(1.8deg);
+  }
+  75% {
+    transform: translate3d(0, -2.5px, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-1.8deg);
+  }
+}
+
+@keyframes frikaz-piggy-shadow-pulse {
+  0%, 50%, 100% {
+    transform: scaleX(1) scaleY(1);
+    opacity: 0.24;
+  }
+  25%, 75% {
+    transform: scaleX(0.92) scaleY(0.94);
+    opacity: 0.18;
+  }
+}
+
+@keyframes frikaz-piggy-idle-breathe {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -2.5px, 0) scale(1.01);
+  }
+}
+
+@keyframes frikaz-hoof-fade {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  18% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  72% {
+    opacity: 0.42;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+}
+
+.frikaz-hoof-print {
+  animation: frikaz-hoof-fade 2.8s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.frikaz-piggy-walking .piggy-sprite-layer {
+  transform-origin: 50% 88%;
+  animation: frikaz-piggy-walk-gait 1.12s ease-in-out infinite;
+  will-change: transform;
+}
+
+.frikaz-piggy-walking .piggy-shadow-layer {
+  transform-origin: center;
+  animation: frikaz-piggy-shadow-pulse 1.12s ease-in-out infinite;
+}
+
+.frikaz-piggy-idle .piggy-sprite-layer {
+  transform-origin: 50% 90%;
+  animation: frikaz-piggy-idle-breathe 3.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Official Google Sign-In button styling */
+.gsi-material-button {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #0f294a;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  height: 40px;
+  padding: 0 14px;
+  position: relative;
+  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
+}
+
+.gsi-material-button:hover {
+  background-color: #f8fafc;
+  border-color: #0f294a;
+  box-shadow: 0 1px 3px rgba(15, 41, 74, 0.12);
+}
+
+.gsi-material-button-content-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gsi-material-button-icon {
+  height: 18px;
+  width: 18px;
+  flex-shrink: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

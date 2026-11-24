@@ -110,7 +110,7 @@ export function NormogramaManager() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-bold text-[#0F294A]">
-            Normograma de Bienestar Social Laboral
+            Normograma Legal Institucional
           </h2>
           <p className="text-sm text-slate-600">
             Gestión normativa editable sin límite de registros ·{' '}

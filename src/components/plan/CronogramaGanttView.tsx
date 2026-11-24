@@ -85,6 +85,10 @@ export function CronogramaGanttView() {
   const handleSaveSchedule = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+    if (editing.fechaInicio && editing.fechaFin && editing.fechaFin < editing.fechaInicio) {
+      notify('La fecha de finalización no puede ser anterior a la fecha de inicio.', 'warning');
+      return;
+    }
     updatePrograma(editing);
     setEditing(null);
   };
@@ -164,28 +168,35 @@ export function CronogramaGanttView() {
 
         <div className="rounded-2xl border border-[#FDE047] bg-[#FFFBEB] p-5">
           <div className="flex items-center justify-between text-xs font-bold text-[#0F294A]/75">
-            <span>Presupuesto Actividades 2027</span>
+            <span>
+              {state.presupuestoGeneral2027.estadoAprobacion === 'Aprobado por Gerencia'
+                ? 'Presupuesto Aprobado 2027'
+                : 'Proyección Actividades 2027'}
+            </span>
             <DollarSign className="h-4 w-4 text-[#D97706]" />
           </div>
           <p className="mt-2 font-display text-2xl font-extrabold text-[#0F294A] tabular-nums">
             {formatCop(summary.totalBudget)}
           </p>
           <p className="mt-1 text-xs text-[#0F294A]/70">
-            + {formatCop(state.presupuestoGeneral2027.reservaImprevistos)} reserva ={' '}
-            {formatCop(state.presupuestoGeneral2027.presupuestoTotalAprobado)}
+            {state.presupuestoGeneral2027.estadoAprobacion}
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#FCA5A5] bg-[#FEF2F2] p-5">
           <div className="flex items-center justify-between text-xs font-bold text-[#D61F26]">
-            <span>Presupuesto Ejecutado</span>
+            <span>Ejecución Presupuestal Real</span>
             <DollarSign className="h-4 w-4 text-[#D61F26]" />
           </div>
           <p className="mt-2 font-display text-2xl font-extrabold text-[#D61F26] tabular-nums">
-            {formatCop(summary.executedBudget)}
+            {state.presupuestoGeneral2027.estadoAprobacion === 'Aprobado por Gerencia'
+              ? formatCop(summary.executedBudget)
+              : 'Pendiente'}
           </p>
           <p className="mt-1 text-xs text-[#0F294A]/80 tabular-nums">
-            {summary.pctBudget}% ejecutado de actividades
+            {state.presupuestoGeneral2027.estadoAprobacion === 'Aprobado por Gerencia'
+              ? `${summary.pctBudget}% ejecutado real`
+              : 'Requiere aprobación de Gerencia'}
           </p>
         </div>
 

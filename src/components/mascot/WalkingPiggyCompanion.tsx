@@ -22,18 +22,18 @@ interface WalkEventDetail {
 const WALK_NAV_EVENT = 'frikaz:piggy-walk-to';
 
 /**
- * Solicita al cerdito corporativo caminar hasta un elemento de la interfaz
- * dejando huellas progresivas y ejecutar una acción (como abrir un módulo) al llegar.
+ * Solicita al cerdito corporativo caminar hacia un elemento mientras la navegación responde
+ * al instante (sin bloquear clics ni pantalla) o con un callback opcional al finalizar.
  */
-export function requestPiggyWalkAndNavigate(element: HTMLElement, onArrive: () => void) {
+export function requestPiggyWalkAndNavigate(element: HTMLElement, onArrive?: () => void) {
   if (typeof window === 'undefined') {
-    onArrive();
+    onArrive?.();
     return;
   }
   const reducedMotion =
     window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reducedMotion) {
-    onArrive();
+    onArrive?.();
     return;
   }
   window.dispatchEvent(
@@ -53,7 +53,6 @@ function easeInOutSine(t: number): number {
 export function PiggyHoofPrintSvg({ className = '' }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={`h-4 w-4 ${className}`} aria-hidden="true">
-      {/* Dos dedos principales de la pezuña del cerdito */}
       <path
         d="M11 3.5 C8 3.5, 6 7, 6.5 11.5 C7 14, 9 14.5, 10.5 13 C11.2 12.2, 11.2 5, 11 3.5 Z"
         fill="#0F294A"
@@ -62,7 +61,6 @@ export function PiggyHoofPrintSvg({ className = '' }: { className?: string }) {
         d="M13 3.5 C16 3.5, 18 7, 17.5 11.5 C17 14, 15 14.5, 13.5 13 C12.8 12.2, 12.8 5, 13 3.5 Z"
         fill="#0F294A"
       />
-      {/* Dos puntitos posteriores de apoyo */}
       <circle cx="8" cy="17.5" r="1.9" fill="#0F294A" />
       <circle cx="16" cy="17.5" r="1.9" fill="#0F294A" />
     </svg>
@@ -70,29 +68,31 @@ export function PiggyHoofPrintSvg({ className = '' }: { className?: string }) {
 }
 
 /**
- * Mascota animada integrada a la plataforma.
- * Camina de forma natural hacia los elementos seleccionados, deja pequeñas huellas de
- * patitas sincronizadas con el movimiento que se desvanecen suavemente, y dispara
- * callbacks al llegar cuando navega entre apartados.
+ * Mascota oficial animada sin re-renders a 60fps:
+ * actualiza transform directamente vía DOM ref dentro de requestAnimationFrame,
+ * mantiene caminata lenta y pausada (~105 px/s) y deja huellas progresivas que se desvanecen.
  */
 export function WalkingPiggyCompanion() {
-  const [pos, setPos] = useState<Point>(() => {
-    if (typeof window === 'undefined') return { x: 112, y: 180 };
-    return {
-      x: Math.min(window.innerWidth - 76, 110),
-      y: Math.min(window.innerHeight - 96, 175),
-    };
-  });
+  const initialPoint: Point =
+    typeof window === 'undefined'
+      ? { x: 112, y: 180 }
+      : {
+          x: Math.min(window.innerWidth - 76, 110),
+          y: Math.min(window.innerHeight - 96, 175),
+        };
+
   const [facing, setFacing] = useState<'left' | 'right'>('right');
   const [isWalking, setIsWalking] = useState(false);
   const [hoofPrints, setHoofPrints] = useState<HoofPrint[]>([]);
 
-  const livePosRef = useRef<Point>(pos);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const livePosRef = useRef<Point>(initialPoint);
   const rafRef = useRef<number | null>(null);
-  const lastStepPosRef = useRef<Point>(pos);
+  const lastStepPosRef = useRef<Point>(initialPoint);
   const lastStepTimeRef = useRef<number>(0);
   const stepSideRef = useRef<'left' | 'right'>('left');
   const timeoutsRef = useRef<number[]>([]);
+  const lastTargetElRef = useRef<HTMLElement | null>(null);
 
   const animRef = useRef<{
     startX: number;
@@ -104,25 +104,30 @@ export function WalkingPiggyCompanion() {
     onArrive?: () => void;
   } | null>(null);
 
+  const applyTransform = useCallback((x: number, y: number) => {
+    livePosRef.current = { x, y };
+    if (wrapperRef.current) {
+      wrapperRef.current.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0) translate(-50%, -62%)`;
+    }
+  }, []);
+
   const spawnHoofPrint = useCallback((x: number, y: number, dx: number, dy: number) => {
     const angleRad = Math.atan2(dy, dx);
-    // Rotar SVG cuya punta apunta hacia arriba (-90deg en rad = 0deg visual)
     const angleDeg = (angleRad * 180) / Math.PI + 90;
     const side = stepSideRef.current;
     stepSideRef.current = side === 'left' ? 'right' : 'left';
 
-    // Desplazamiento lateral alternado izquierdo/derecho respecto a la dirección del paso
     const perpOffset = side === 'left' ? -8 : 8;
     const norm = Math.hypot(dx, dy) || 1;
     const px = x + (-dy / norm) * perpOffset;
     const py = y + 18 + (dx / norm) * perpOffset;
 
     const id = `hoof-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    setHoofPrints((prev) => [...prev.slice(-22), { id, x: px, y: py, angleDeg, side }]);
+    setHoofPrints((prev) => [...prev.slice(-18), { id, x: px, y: py, angleDeg, side }]);
 
     const timer = window.setTimeout(() => {
       setHoofPrints((prev) => prev.filter((item) => item.id !== id));
-    }, 2800);
+    }, 2600);
     timeoutsRef.current.push(timer);
   }, []);
 
@@ -172,15 +177,14 @@ export function WalkingPiggyCompanion() {
       }
 
       if (reducedMotion || dist < 12) {
-        livePosRef.current = { x: targetX, y: targetY };
-        setPos({ x: targetX, y: targetY });
+        applyTransform(targetX, targetY);
         setIsWalking(false);
-        if (onArrive) onArrive();
+        onArrive?.();
         return;
       }
 
-      // Velocidad pausada, tranquila y natural (~120 px/s) sin aceleraciones repentinas
-      const duration = Math.max(1200, Math.min(customMaxMs, (dist / 120) * 1000));
+      // Velocidad pausada y natural (~105 px/s) con aceleración/frenado suave
+      const duration = Math.max(1300, Math.min(customMaxMs, (dist / 105) * 1000));
       const nowStart = performance.now();
       lastStepPosRef.current = { ...cur };
       lastStepTimeRef.current = nowStart;
@@ -214,8 +218,7 @@ export function WalkingPiggyCompanion() {
           nextY - lastStepPosRef.current.y
         );
         const sinceLastStep = now - lastStepTimeRef.current;
-        // Sincronizar huellas con cada paso lento del ciclo de caminata (~520ms / 42px)
-        if (stepDist >= 42 && sinceLastStep >= 420 && rawProgress < 0.94) {
+        if (stepDist >= 42 && sinceLastStep >= 520 && rawProgress < 0.94) {
           spawnHoofPrint(
             nextX,
             nextY,
@@ -226,8 +229,7 @@ export function WalkingPiggyCompanion() {
           lastStepTimeRef.current = now;
         }
 
-        livePosRef.current = { x: nextX, y: nextY };
-        setPos({ x: nextX, y: nextY });
+        applyTransform(nextX, nextY);
 
         if (rawProgress < 1) {
           rafRef.current = requestAnimationFrame(tick);
@@ -236,16 +238,18 @@ export function WalkingPiggyCompanion() {
           animRef.current = null;
           rafRef.current = null;
           setIsWalking(false);
-          if (arrivalCallback) arrivalCallback();
+          arrivalCallback?.();
         }
       };
 
       rafRef.current = requestAnimationFrame(tick);
     },
-    [spawnHoofPrint]
+    [applyTransform, spawnHoofPrint]
   );
 
   useEffect(() => {
+    applyTransform(livePosRef.current.x, livePosRef.current.y);
+
     const handleCustomWalkNav = (e: Event) => {
       const detail = (e as CustomEvent<WalkEventDetail>).detail;
       if (!detail || !detail.element) return;
@@ -254,15 +258,25 @@ export function WalkingPiggyCompanion() {
         detail.onArrive?.();
         return;
       }
-      startWalkTo(point.x, point.y, detail.onArrive, 2200);
+      if (
+        lastTargetElRef.current === detail.element &&
+        animRef.current &&
+        Math.hypot(animRef.current.targetX - point.x, animRef.current.targetY - point.y) < 16
+      ) {
+        return;
+      }
+      lastTargetElRef.current = detail.element;
+      startWalkTo(point.x, point.y, detail.onArrive, 3200);
     };
 
     const handleGlobalNavigationClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
       if (!target || typeof target.closest !== 'function') return;
 
+      if (target.closest('[role="dialog"], [aria-live="polite"]')) return;
+
       const interactiveEl = target.closest(
-        'button, [role="button"], [data-piggy-target]'
+        '[data-piggy-target], [role="tab"], nav button, nav [role="button"]'
       ) as HTMLElement | null;
       if (!interactiveEl) return;
       if (interactiveEl.getAttribute('data-piggy-ignore') === 'true') return;
@@ -276,18 +290,24 @@ export function WalkingPiggyCompanion() {
 
       const point = computeTargetForElement(interactiveEl);
       if (!point) return;
+      if (
+        lastTargetElRef.current === interactiveEl &&
+        animRef.current &&
+        Math.hypot(animRef.current.targetX - point.x, animRef.current.targetY - point.y) < 16
+      ) {
+        return;
+      }
+      lastTargetElRef.current = interactiveEl;
       startWalkTo(point.x, point.y);
     };
 
     const handleResize = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const clamped = {
-        x: Math.max(48, Math.min(vw - 48, livePosRef.current.x)),
-        y: Math.max(74, Math.min(vh - 54, livePosRef.current.y)),
-      };
-      livePosRef.current = clamped;
-      setPos(clamped);
+      applyTransform(
+        Math.max(48, Math.min(vw - 48, livePosRef.current.x)),
+        Math.max(74, Math.min(vh - 54, livePosRef.current.y))
+      );
     };
 
     window.addEventListener(WALK_NAV_EVENT, handleCustomWalkNav);
@@ -304,11 +324,10 @@ export function WalkingPiggyCompanion() {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       timeoutsRef.current.forEach((id) => window.clearTimeout(id));
     };
-  }, [computeTargetForElement, startWalkTo]);
+  }, [applyTransform, computeTargetForElement, startWalkTo]);
 
   return (
     <>
-      {/* Huellas progresivas del cerdito que aparecen al caminar y se desvanecen suavemente */}
       <div className="pointer-events-none fixed inset-0 z-30 overflow-hidden" aria-hidden="true">
         {hoofPrints.map((print) => (
           <div
@@ -325,11 +344,11 @@ export function WalkingPiggyCompanion() {
         ))}
       </div>
 
-      {/* Cerdito corporativo visible caminando por la interfaz */}
       <div
+        ref={wrapperRef}
         className="pointer-events-none fixed left-0 top-0 z-40 select-none"
         style={{
-          transform: `translate3d(${Math.round(pos.x)}px, ${Math.round(pos.y)}px, 0) translate(-50%, -62%)`,
+          transform: `translate3d(${Math.round(initialPoint.x)}px, ${Math.round(initialPoint.y)}px, 0) translate(-50%, -62%)`,
           willChange: 'transform',
         }}
         aria-hidden="true"

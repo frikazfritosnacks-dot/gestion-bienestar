@@ -10,12 +10,18 @@ import {
   ArrowDown,
   GitFork,
   AlertCircle,
+  FileDown,
 } from 'lucide-react';
 import { useBienestar } from '../../context/BienestarContext';
 import { FlowchartSymbol, ProcessStep } from '../../types/bienestar';
 import { SYMBOL_LABELS, SymbolGraphic } from '../ui/SymbolGraphic';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import { ChipSvg } from '../ui/ChipGraphics';
+import {
+  buildMatrizWordFilename,
+  downloadManualMatrizFlujogramaThreeWord,
+  generateMatrizWordBlob,
+} from '../../utils/wordManualGenerator';
 
 interface MatrizDetalladaSectionProps {
   onOpenFlowchart: () => void;
@@ -41,7 +47,43 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
     updateProcessStep,
     deleteProcessStep,
     moveProcessStep,
+    notify,
   } = useBienestar();
+
+  const [downloadingMatrizWord, setDownloadingMatrizWord] = useState(false);
+  const [downloadingThreeWord, setDownloadingThreeWord] = useState(false);
+
+  const handleDownloadMatrizWord = async () => {
+    if (downloadingMatrizWord) return;
+    setDownloadingMatrizWord(true);
+    try {
+      const blob = await generateMatrizWordBlob(state);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = buildMatrizWordFilename(state);
+      a.click();
+      URL.revokeObjectURL(url);
+      notify('Matriz Detallada descargada en Word (.docx).');
+    } catch {
+      notify('No fue posible generar la Matriz Detallada en Word. Inténtalo de nuevo.', 'warning');
+    } finally {
+      setDownloadingMatrizWord(false);
+    }
+  };
+
+  const handleDownloadThreeWord = async () => {
+    if (downloadingThreeWord) return;
+    setDownloadingThreeWord(true);
+    try {
+      await downloadManualMatrizFlujogramaThreeWord(state);
+      notify('Descargados los 3 archivos Word independientes: Manual, Matriz y Flujograma.');
+    } catch {
+      notify('No fue posible generar los 3 archivos Word. Inténtalo nuevamente.', 'warning');
+    } finally {
+      setDownloadingThreeWord(false);
+    }
+  };
 
   const [editingMeta, setEditingMeta] = useState(false);
   const [metaForm, setMetaForm] = useState(state.matrizMeta);
@@ -154,8 +196,26 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
+              onClick={handleDownloadMatrizWord}
+              disabled={downloadingMatrizWord || downloadingThreeWord}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0F294A] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-bold text-white transition-all duration-150 hover:bg-[#D61F26] whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <FileDown className="h-3.5 w-3.5 text-[#FACC15]" />
+              {downloadingMatrizWord ? 'Generando...' : 'Descargar Matriz (.docx)'}
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadThreeWord}
+              disabled={downloadingMatrizWord || downloadingThreeWord}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-bold text-white transition-all duration-150 hover:bg-[#B3161C] whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <FileDown className="h-3.5 w-3.5 text-[#FACC15]" />
+              {downloadingThreeWord ? 'Generando 3 Word...' : 'Descargar 3 Word'}
+            </button>
+            <button
+              type="button"
               onClick={onOpenFlowchart}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2 text-xs font-semibold text-[#0F294A] transition-all duration-150 hover:bg-[#FDE047] whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2 text-xs font-semibold text-[#0F294A] transition-all duration-150 hover:bg-[#FDE047] whitespace-nowrap shrink-0 cursor-pointer"
             >
               <GitFork className="h-3.5 w-3.5 text-[#D61F26]" />
               Ver en Flujograma
@@ -163,7 +223,7 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
             <button
               type="button"
               onClick={() => setEditingMeta((v) => !v)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F294A]/20 bg-white px-3.5 py-2 text-xs font-semibold text-[#0F294A] transition-colors hover:border-[#D61F26] hover:text-[#D61F26] whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F294A]/20 bg-white px-3.5 py-2 text-xs font-semibold text-[#0F294A] transition-colors hover:border-[#D61F26] hover:text-[#D61F26] whitespace-nowrap shrink-0 cursor-pointer"
             >
               <Pencil className="h-3.5 w-3.5" />
               {editingMeta ? 'Cerrar encabezado' : 'Editar identificación'}

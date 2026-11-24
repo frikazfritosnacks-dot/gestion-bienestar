@@ -193,7 +193,7 @@ export async function buildPresupuestoGeneral2027Workbook(
   const rMeta = ws.getRow(5);
   rMeta.height = 22;
   ws.mergeCells(5, 1, 5, 3);
-  rMeta.getCell(1).value = 'Presupuesto General Aprobado (COP):';
+  rMeta.getCell(1).value = 'Presupuesto General Proyectado / Aprobado (COP):';
   rMeta.getCell(1).font = { bold: true, size: 10, color: { argb: FRIKAZ_NAVY } };
   rMeta.getCell(4).value = null;
   rMeta.getCell(4).numFmt = '$#,##0';
@@ -249,53 +249,12 @@ export async function buildPresupuestoGeneral2027Workbook(
     }
   }
 
-  const subIdx = 7 + emptyRows;
-  const subRow = ws.getRow(subIdx);
-  subRow.height = 24;
-  subRow.getCell(2).value = 'SUBTOTAL DE ACTIVIDADES';
-  subRow.getCell(4).value = { formula: `SUM(D7:D${subIdx - 1})` };
-  subRow.getCell(5).value = { formula: `SUM(E7:E${subIdx - 1})` };
-  subRow.getCell(6).value = { formula: `D${subIdx}-E${subIdx}` };
-  subRow.getCell(7).value = { formula: `D${subIdx}-E${subIdx}` };
-  subRow.getCell(8).value = { formula: `IFERROR(E${subIdx}/D${subIdx},0)` };
-  for (let c = 1; c <= 9; c++) {
-    const cell = subRow.getCell(c);
-    cell.font = { bold: true, size: 10, color: { argb: FRIKAZ_NAVY } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: FRIKAZ_YELLOW_SOFT } };
-    if (c >= 4 && c <= 7) cell.numFmt = '$#,##0';
-    if (c === 8) cell.numFmt = '0.0%';
-    applyThinBorder(cell);
-  }
-
-  const resIdx = subIdx + 1;
-  const resRow = ws.getRow(resIdx);
-  resRow.height = 24;
-  resRow.values = [
-    '—',
-    'Reserva para imprevistos (separada hasta autorización)',
-    'Reserva',
-    null,
-    null,
-    { formula: `IF(OR(ISNUMBER(D${resIdx}),ISNUMBER(E${resIdx})),N(D${resIdx})-N(E${resIdx}),"")` },
-    { formula: `IF(OR(ISNUMBER(D${resIdx}),ISNUMBER(E${resIdx})),N(D${resIdx})-N(E${resIdx}),"")` },
-    { formula: `IFERROR(E${resIdx}/D${resIdx},"")` },
-    '',
-  ];
-  for (let c = 1; c <= 9; c++) {
-    const cell = resRow.getCell(c);
-    cell.font = { size: 10, bold: true, color: { argb: FRIKAZ_NAVY } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: FRIKAZ_BLUE_SOFT } };
-    if (c >= 4 && c <= 7) cell.numFmt = '$#,##0';
-    if (c === 8) cell.numFmt = '0.0%';
-    applyThinBorder(cell);
-  }
-
-  const totIdx = resIdx + 1;
+  const totIdx = 7 + emptyRows;
   const totRow = ws.getRow(totIdx);
   totRow.height = 26;
   totRow.getCell(2).value = 'TOTAL GENERAL PRESUPUESTADO';
-  totRow.getCell(4).value = { formula: `SUM(D${subIdx},D${resIdx})` };
-  totRow.getCell(5).value = { formula: `SUM(E${subIdx},E${resIdx})` };
+  totRow.getCell(4).value = { formula: `SUM(D7:D${totIdx - 1})` };
+  totRow.getCell(5).value = { formula: `SUM(E7:E${totIdx - 1})` };
   totRow.getCell(6).value = { formula: `D${totIdx}-E${totIdx}` };
   totRow.getCell(7).value = { formula: `D${totIdx}-E${totIdx}` };
   totRow.getCell(8).value = { formula: `IFERROR(E${totIdx}/D${totIdx},0)` };

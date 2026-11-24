@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -34,33 +34,130 @@ interface AsistenciaManagerProps {
 }
 
 const AUTHORIZED_PIN = '2027';
+const ASISTENCIA_DRAFT_KEY = 'frikaz_draft_asistencia_v1';
+
+interface AsistenciaDraft {
+  selectedActId: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  lugar: string;
+  responsable: string;
+  firmaResponsable: string;
+  observaciones: string;
+  participantes: ParticipanteAsistencia[];
+  newRow: Omit<ParticipanteAsistencia, 'id'>;
+}
+
+function loadAsistenciaDraft(fallbackActId: string): AsistenciaDraft | null {
+  try {
+    const raw = sessionStorage.getItem(ASISTENCIA_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<AsistenciaDraft>;
+    return {
+      selectedActId: parsed.selectedActId || fallbackActId,
+      fecha: parsed.fecha || '',
+      horaInicio: parsed.horaInicio || '',
+      horaFin: parsed.horaFin || '',
+      lugar: parsed.lugar || '',
+      responsable: parsed.responsable || '',
+      firmaResponsable: parsed.firmaResponsable || '',
+      observaciones: parsed.observaciones || '',
+      participantes: Array.isArray(parsed.participantes) ? parsed.participantes : [],
+      newRow: parsed.newRow || {
+        nombreCompleto: '',
+        cargo: '',
+        area: '',
+        documento: '',
+        firma: '',
+      },
+    };
+  } catch {
+    return null;
+  }
+}
 
 export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps) {
   const { state, addListaAsistencia, updateListaAsistenciaAuthorized, notify } = useBienestar();
+  const initialDraft = loadAsistenciaDraft(state.planBienestar[0]?.id || 'act-1');
 
   const [selectedActId, setSelectedActId] = useState<string>(
-    initialActividadId || state.planBienestar[0]?.id || 'act-1'
+    initialActividadId || initialDraft?.selectedActId || state.planBienestar[0]?.id || 'act-1'
   );
   const [exporting, setExporting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Estado del formulario de nueva jornada (completamente en blanco por defecto)
-  const [fecha, setFecha] = useState('');
-  const [horaInicio, setHoraInicio] = useState('');
-  const [horaFin, setHoraFin] = useState('');
-  const [lugar, setLugar] = useState('');
-  const [responsable, setResponsable] = useState('');
-  const [firmaResponsable, setFirmaResponsable] = useState('');
-  const [observaciones, setObservaciones] = useState('');
-  const [participantes, setParticipantes] = useState<ParticipanteAsistencia[]>([]);
+  // Estado del formulario de nueva jornada (completamente en blanco por defecto o borrador recuperado)
+  const [fecha, setFecha] = useState(initialDraft?.fecha || '');
+  const [horaInicio, setHoraInicio] = useState(initialDraft?.horaInicio || '');
+  const [horaFin, setHoraFin] = useState(initialDraft?.horaFin || '');
+  const [lugar, setLugar] = useState(initialDraft?.lugar || '');
+  const [responsable, setResponsable] = useState(initialDraft?.responsable || '');
+  const [firmaResponsable, setFirmaResponsable] = useState(
+    initialDraft?.firmaResponsable || ''
+  );
+  const [observaciones, setObservaciones] = useState(initialDraft?.observaciones || '');
+  const [participantes, setParticipantes] = useState<ParticipanteAsistencia[]>(
+    initialDraft?.participantes || []
+  );
 
-  const [newRow, setNewRow] = useState<Omit<ParticipanteAsistencia, 'id'>>({
-    nombreCompleto: '',
-    cargo: '',
-    area: '',
-    documento: '',
-    firma: '',
-  });
+  const [newRow, setNewRow] = useState<Omit<ParticipanteAsistencia, 'id'>>(
+    initialDraft?.newRow || {
+      nombreCompleto: '',
+      cargo: '',
+      area: '',
+      documento: '',
+      firma: '',
+    }
+  );
   const [lastSavedCode, setLastSavedCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const hasDraft =
+        fecha ||
+        horaInicio ||
+        horaFin ||
+        lugar ||
+        responsable ||
+        firmaResponsable ||
+        observaciones ||
+        participantes.length > 0 ||
+        newRow.nombreCompleto ||
+        newRow.cargo ||
+        newRow.area;
+      if (!hasDraft) {
+        sessionStorage.removeItem(ASISTENCIA_DRAFT_KEY);
+        return;
+      }
+      const draft: AsistenciaDraft = {
+        selectedActId,
+        fecha,
+        horaInicio,
+        horaFin,
+        lugar,
+        responsable,
+        firmaResponsable,
+        observaciones,
+        participantes,
+        newRow,
+      };
+      sessionStorage.setItem(ASISTENCIA_DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      // ignore sessionStorage error
+    }
+  }, [
+    selectedActId,
+    fecha,
+    horaInicio,
+    horaFin,
+    lugar,
+    responsable,
+    firmaResponsable,
+    observaciones,
+    participantes,
+    newRow,
+  ]);
 
   // Filtros de Historial y Descargas (Apartado C)
   const [filterActId, setFilterActId] = useState<string>('ALL');
@@ -181,6 +278,8 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
         .slice(0, 28);
       await downloadWorkbookAsExcel(wb, `Plantilla_En_Blanco_Asistencia_${safeName}.xlsx`);
       notify('Plantilla en blanco de lista de asistencia descargada (.xlsx).');
+    } catch {
+      notify('No fue posible generar la plantilla en Excel. Inténtalo de nuevo.', 'warning');
     } finally {
       setExporting(false);
     }
@@ -193,6 +292,8 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
       const wb = await buildPlantillaAsistenciaEnBlancoWorkbook({ general: true });
       await downloadWorkbookAsExcel(wb, 'Plantilla_General_Asistencia_Frikaz_2027.xlsx');
       notify('Plantilla general en blanco para actividades descargada (.xlsx).');
+    } catch {
+      notify('No fue posible generar la plantilla general en Excel.', 'warning');
     } finally {
       setExporting(false);
     }
@@ -241,36 +342,47 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
 
   const handleSaveListaAsistencia = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedActivity) return;
+    if (!selectedActivity || submitting) return;
 
-    const res = addListaAsistencia({
-      actividadId: selectedActivity.id,
-      nombreActividad: selectedActivity.actividad,
-      dimension: String(selectedActivity.dimension),
-      fecha,
-      horaInicio,
-      horaFin,
-      lugar: lugar.trim(),
-      responsable: responsable.trim(),
-      firmaResponsable: firmaResponsable.trim(),
-      observaciones: observaciones.trim(),
-      participantes,
-    });
+    setSubmitting(true);
+    try {
+      const res = addListaAsistencia({
+        actividadId: selectedActivity.id,
+        nombreActividad: selectedActivity.actividad,
+        dimension: String(selectedActivity.dimension),
+        fecha,
+        horaInicio,
+        horaFin,
+        lugar: lugar.trim(),
+        responsable: responsable.trim(),
+        firmaResponsable: firmaResponsable.trim(),
+        observaciones: observaciones.trim(),
+        participantes,
+      });
 
-    if (res.ok && res.record) {
-      const code = `ASIST-2027-${String(res.record.numeroRegistro ?? 1).padStart(3, '0')}`;
-      setLastSavedCode(code);
-      setEmptyDownloadWarning(false);
-      setSelectedDownloadListId(res.record.id);
-      // Limpiar borrador para el siguiente registro independiente
-      setFecha('');
-      setHoraInicio('');
-      setHoraFin('');
-      setLugar('');
-      setResponsable('');
-      setFirmaResponsable('');
-      setObservaciones('');
-      setParticipantes([]);
+      if (res.ok && res.record) {
+        try {
+          sessionStorage.removeItem(ASISTENCIA_DRAFT_KEY);
+        } catch {
+          // ignore
+        }
+        const code = `ASIST-2027-${String(res.record.numeroRegistro ?? 1).padStart(3, '0')}`;
+        setLastSavedCode(code);
+        setEmptyDownloadWarning(false);
+        setSelectedDownloadListId(res.record.id);
+        // Limpiar borrador para el siguiente registro independiente
+        setFecha('');
+        setHoraInicio('');
+        setHoraFin('');
+        setLugar('');
+        setResponsable('');
+        setFirmaResponsable('');
+        setObservaciones('');
+        setParticipantes([]);
+        setNewRow({ nombreCompleto: '', cargo: '', area: '', documento: '', firma: '' });
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -306,6 +418,8 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
         .slice(0, 24);
       await downloadWorkbookAsExcel(wb, `Lista_Diligenciada_${code}_${safeName}.xlsx`);
       notify(`Lista diligenciada ${code} descargada en Excel (.xlsx).`);
+    } catch {
+      notify('No fue posible exportar la lista diligenciada en Excel.', 'warning');
     } finally {
       setExporting(false);
     }
@@ -328,6 +442,8 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
       );
       await downloadWorkbookAsExcel(wb, 'Consolidado_General_Asistencia_Frikaz_2027.xlsx');
       notify('Consolidado general de asistencia descargado en Excel (.xlsx).');
+    } catch {
+      notify('No fue posible generar el consolidado general de asistencia.', 'warning');
     } finally {
       setExporting(false);
     }
@@ -726,10 +842,11 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
         <div className="flex justify-end">
           <button
             type="submit"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#D61F26] border-b-2 border-[#FACC15] px-6 py-3 text-xs font-extrabold text-white hover:bg-[#B3161C] cursor-pointer"
+            disabled={submitting}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#D61F26] border-b-2 border-[#FACC15] px-6 py-3 text-xs font-extrabold text-white hover:bg-[#B3161C] disabled:opacity-60 cursor-pointer"
           >
             <Save className="h-4 w-4 text-[#FACC15]" />
-            Guardar lista de asistencia
+            {submitting ? 'Guardando lista...' : 'Guardar lista de asistencia'}
           </button>
         </div>
       </form>

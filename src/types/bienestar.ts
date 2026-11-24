@@ -186,15 +186,35 @@ export interface PresupuestoCostoItem {
   ejecutado: number;
 }
 
+export type EstadoPresupuestoGeneral =
+  | 'Propuesta pendiente de aprobación'
+  | 'Aprobado por Gerencia'
+  | 'En ajuste';
+
+export interface PresupuestoHistorialItem {
+  id: string;
+  fechaHora: string;
+  usuario: string;
+  tipo: 'Creación' | 'Edición' | 'Eliminación' | 'Aprobación' | 'Ajuste' | 'Ejecución';
+  descripcion: string;
+  valorAnterior: number;
+  valorNuevo: number;
+}
+
 export interface PresupuestoGeneral2027 {
   vigencia: string;
   poblacionTrabajadores: number;
+  estadoAprobacion: EstadoPresupuestoGeneral;
   presupuestoTotalAprobado: number;
+  gerenteAprobador?: string;
+  fechaAprobacion?: string;
+  observacionesGerencia?: string;
   reservaImprevistos: number;
   reservaAutorizada: boolean;
   reservaEjecutada: number;
   reservaMotivoAutorizacion: string;
   items: PresupuestoCostoItem[];
+  historialModificaciones: PresupuestoHistorialItem[];
 }
 
 export type CriterioEncuestaKey =

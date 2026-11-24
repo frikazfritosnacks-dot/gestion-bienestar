@@ -10,12 +10,18 @@ import {
   X,
   Check,
   AlertCircle,
+  FileDown,
 } from 'lucide-react';
 import { useBienestar } from '../../context/BienestarContext';
 import { FlowchartSymbol, ProcessStep } from '../../types/bienestar';
 import { SYMBOL_LABELS, SymbolGraphic } from '../ui/SymbolGraphic';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import { ChipSvg } from '../ui/ChipGraphics';
+import {
+  buildFlujogramaWordFilename,
+  downloadManualMatrizFlujogramaThreeWord,
+  generateFlujogramaWordBlob,
+} from '../../utils/wordManualGenerator';
 
 interface FlujogramaSectionProps {
   onOpenMatriz: () => void;
@@ -24,11 +30,45 @@ interface FlujogramaSectionProps {
 const SYMBOLS: FlowchartSymbol[] = ['oval', 'rectangle', 'diamond', 'document', 'cylinder'];
 
 export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
-  const { state, addProcessStep, updateProcessStep, deleteProcessStep } = useBienestar();
+  const { state, addProcessStep, updateProcessStep, deleteProcessStep, notify } = useBienestar();
 
   const [selectedId, setSelectedId] = useState<string | null>(state.proceso[0]?.id ?? null);
   const [simulatedBranch, setSimulatedBranch] = useState<Record<string, 'yes' | 'no'>>({});
   const [editMode, setEditMode] = useState(false);
+  const [downloadingFlujoWord, setDownloadingFlujoWord] = useState(false);
+  const [downloadingThreeWord, setDownloadingThreeWord] = useState(false);
+
+  const handleDownloadFlujoWord = async () => {
+    if (downloadingFlujoWord) return;
+    setDownloadingFlujoWord(true);
+    try {
+      const blob = await generateFlujogramaWordBlob(state);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = buildFlujogramaWordFilename(state);
+      a.click();
+      URL.revokeObjectURL(url);
+      notify('Flujograma descargado en Word (.docx).');
+    } catch {
+      notify('No fue posible generar el Flujograma en Word. Inténtalo de nuevo.', 'warning');
+    } finally {
+      setDownloadingFlujoWord(false);
+    }
+  };
+
+  const handleDownloadThreeWord = async () => {
+    if (downloadingThreeWord) return;
+    setDownloadingThreeWord(true);
+    try {
+      await downloadManualMatrizFlujogramaThreeWord(state);
+      notify('Descargados los 3 archivos Word independientes: Manual, Matriz y Flujograma.');
+    } catch {
+      notify('No fue posible generar los 3 archivos Word. Inténtalo nuevamente.', 'warning');
+    } finally {
+      setDownloadingThreeWord(false);
+    }
+  };
 
   const [editingStep, setEditingStep] = useState<ProcessStep | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -264,17 +304,39 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
 
           <button
             type="button"
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-semibold text-white transition-all duration-150 hover:bg-[#B3161C] hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+            onClick={handleDownloadFlujoWord}
+            disabled={downloadingFlujoWord || downloadingThreeWord}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0F294A] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-bold text-white transition-all duration-150 hover:bg-[#D61F26] whitespace-nowrap shrink-0 cursor-pointer"
           >
-            <Plus className="h-3.5 w-3.5 text-[#FACC15]" />
-            Agregar nodo
+            <FileDown className="h-3.5 w-3.5 text-[#FACC15]" />
+            {downloadingFlujoWord ? 'Generando...' : 'Descargar Flujograma (.docx)'}
           </button>
 
           <button
             type="button"
+            onClick={handleDownloadThreeWord}
+            disabled={downloadingFlujoWord || downloadingThreeWord}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-bold text-white transition-all duration-150 hover:bg-[#B3161C] whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <FileDown className="h-3.5 w-3.5 text-[#FACC15]" />
+            {downloadingThreeWord ? 'Generando 3 Word...' : 'Descargar 3 Word'}
+          </button>
+
+          {editMode && (
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-semibold text-white transition-all duration-150 hover:bg-[#B3161C] hover:-translate-y-0.5 whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5 text-[#FACC15]" />
+              Agregar nodo
+            </button>
+          )}
+
+          <button
+            type="button"
             onClick={onOpenMatriz}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2 text-xs font-semibold text-[#0F294A] transition-colors hover:bg-[#FDE047] whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2 text-xs font-semibold text-[#0F294A] transition-colors hover:bg-[#FDE047] whitespace-nowrap shrink-0 cursor-pointer"
           >
             <FileSpreadsheet className="h-3.5 w-3.5 text-[#D61F26]" />
             Ver Matriz
@@ -685,7 +747,7 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
                 )}
               </div>
 
-              {(editMode || true) && (
+              {editMode && (
                 <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
                   <button
                     type="button"

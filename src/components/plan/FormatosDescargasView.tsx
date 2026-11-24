@@ -42,7 +42,7 @@ const CATEGORIAS_ORDEN: Array<{
   descripcion: string;
 }> = [
   { id: 'Planificación', icon: Layers, descripcion: 'Portada 2027, planificación general, fichas técnicas y convenios.' },
-  { id: 'Presupuesto', icon: DollarSign, descripcion: 'Presupuesto general 2027 ($2.150.000 COP) y desglose por actividad.' },
+  { id: 'Presupuesto', icon: DollarSign, descripcion: 'Presupuesto general 2027 (formato en blanco) y desglose por actividad.' },
   { id: 'Cronograma', icon: CalendarRange, descripcion: 'Cronograma anual 2027 (15 parámetros) y Diagrama de Gantt 2027.' },
   { id: 'Asistencia', icon: ClipboardList, descripcion: 'Listas de asistencia oficiales en Word y Excel editable.' },
   { id: 'Encuestas', icon: ClipboardCheck, descripcion: 'Cuestionarios en Word, tabulación automática y base de datos.' },
@@ -69,7 +69,7 @@ const CATALOGO_FORMATOS: FormatoCatalogItem[] = [
   { id: 'w-ficha', categoria: 'Planificación', tipo: 'word', key: 'ficha', titulo: 'Ficha técnica individual por actividad (9 actividades)', descripcion: 'Los 16 parámetros de planificación y desglose de costos de la actividad elegida.', codigo: 'TH-FT-01..09', perActivity: true },
   { id: 'w-convenios', categoria: 'Planificación', tipo: 'word', key: 'convenios', titulo: 'Formato de registro de convenios', descripcion: 'Consolidado institucional de alianzas vigentes y condiciones.', codigo: 'TH-FBS-12' },
   // Presupuesto
-  { id: 'x-pres-gral', categoria: 'Presupuesto', tipo: 'excel', key: 'presupuesto_general', titulo: 'Presupuesto general anual 2027', descripcion: 'Asignado vs. ejecutado, reserva separada, disponible y % con fórmulas.', codigo: 'TH-PG-01' },
+  { id: 'x-pres-gral', categoria: 'Presupuesto', tipo: 'excel', key: 'presupuesto_general', titulo: 'Presupuesto general anual 2027', descripcion: 'Asignado vs. ejecutado, disponible, diferencia y % con fórmulas automáticas.', codigo: 'TH-PG-01' },
   { id: 'x-desglose', categoria: 'Presupuesto', tipo: 'excel', key: 'desglose_presupuestal', titulo: 'Desglose presupuestal por actividad', descripcion: 'Recurso, cantidad, unidad, valor unitario y total (=Cantidad*Unitario).', codigo: 'TH-DP-02' },
   // Cronograma
   { id: 'x-crono', categoria: 'Cronograma', tipo: 'excel', key: 'cronograma_anual', titulo: 'Cronograma anual 2027', descripcion: 'Las 9 actividades con los 15 parámetros obligatorios desde enero 2027.', codigo: 'TH-CR-03' },

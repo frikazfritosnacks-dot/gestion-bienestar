@@ -55,16 +55,25 @@ export function ActividadFichaDetail({
   onOpenEncuesta,
   onOpenAsistencia,
 }: ActividadFichaDetailProps) {
-  const { state } = useBienestar();
+  const { state, notify } = useBienestar();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<ProgramaBienestar>(actividad);
+  const isBudgetApproved =
+    state.presupuestoGeneral2027.estadoAprobacion === 'Aprobado por Gerencia';
   const costItems = state.presupuestoGeneral2027.items.filter(
     (item) => item.actividadId === actividad.id
   );
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdate(draft);
+    if (draft.fechaInicio && draft.fechaFin && draft.fechaFin < draft.fechaInicio) {
+      notify('La fecha de finalización no puede ser anterior a la fecha de inicio.', 'warning');
+      return;
+    }
+    onUpdate({
+      ...draft,
+      presupuestoEjecutado: isBudgetApproved ? draft.presupuestoEjecutado : 0,
+    });
     setEditing(false);
   };
 
@@ -253,11 +262,16 @@ export function ActividadFichaDetail({
                   11. Presupuesto y desglose detallado 2027
                 </dt>
                 <dd className="text-slate-700 tabular-nums">
-                  <strong>Programado:</strong> {formatCop(actividad.presupuesto)} ·{' '}
-                  <strong>Ejecutado:</strong> {formatCop(actividad.presupuestoEjecutado)}
+                  <strong>{isBudgetApproved ? 'Aprobado:' : 'Proyectado:'}</strong>{' '}
+                  {formatCop(actividad.presupuesto)} ·{' '}
+                  <strong>Ejecutado:</strong>{' '}
+                  {isBudgetApproved ? formatCop(actividad.presupuestoEjecutado) : 'Pendiente de aprobación'}
                 </dd>
                 <dd className="text-xs font-semibold text-[#0F294A]/80">
-                  Estado presupuestal: {actividad.presupuestoEstado}
+                  Estado presupuestal:{' '}
+                  {isBudgetApproved
+                    ? actividad.presupuestoEstado
+                    : state.presupuestoGeneral2027.estadoAprobacion}
                 </dd>
                 {costItems.length > 0 && (
                   <dd className="mt-2 space-y-1 border-t border-[#FDE047]/70 pt-2 text-xs text-[#0F294A]/90">
@@ -511,12 +525,13 @@ export function ActividadFichaDetail({
                 <input
                   type="number"
                   min={0}
+                  disabled={!isBudgetApproved}
                   required
-                  value={draft.presupuestoEjecutado}
+                  value={isBudgetApproved ? draft.presupuestoEjecutado : 0}
                   onChange={(e) =>
                     setDraft({ ...draft, presupuestoEjecutado: Number(e.target.value) || 0 })
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100"
                 />
               </div>
               <div>

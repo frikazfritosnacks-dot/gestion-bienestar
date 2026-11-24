@@ -31,10 +31,9 @@ export function InicioSection({ onSelectSection }: InicioSectionProps) {
   ) => {
     if (navigatingId) return;
     setNavigatingId(section);
-    requestPiggyWalkAndNavigate(e.currentTarget, () => {
-      setNavigatingId(null);
-      onSelectSection(section);
-    });
+    requestPiggyWalkAndNavigate(e.currentTarget);
+    onSelectSection(section);
+    setNavigatingId(null);
   };
 
   const modules: Array<{
@@ -80,8 +79,8 @@ export function InicioSection({ onSelectSection }: InicioSectionProps) {
       id: 'programas',
       title: 'Programas de Bienestar',
       description:
-        'Plan Anual 2027 (10 trabajadores): 8 dimensiones, 9 fichas de actividades, Presupuesto General 2027 ($2.150.000 COP), Cronograma y Gantt 2027, Registro permanente de Encuestas y Asistencia (plantillas en blanco y diligenciadas), convenios y 24 formatos institucionales en blanco.',
-      detail: `${state.planBienestar.length} actividades · Encuestas y Asistencia permanentes · 24 Formatos en blanco (.ZIP)`,
+        'Plan Anual 2027 (10 trabajadores): 8 dimensiones, 9 fichas de actividades, Presupuesto General 2027 editable con aprobación de Gerencia, Cronograma y Gantt 2027, Seguimiento e Indicadores reales, Encuestas, Asistencia, convenios y formatos institucionales en blanco.',
+      detail: `${state.planBienestar.length} actividades · Presupuesto 2027 · Seguimiento, Encuestas y Asistencia`,
       icon: HeartHandshake,
       accent: 'border-[#FCA5A5] bg-gradient-to-br from-[#FEF2F2]/60 via-white to-[#FFFBEB] hover:border-[#D61F26]',
       iconBg: 'bg-[#D61F26] text-[#FACC15]',

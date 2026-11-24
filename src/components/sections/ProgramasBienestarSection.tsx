@@ -19,6 +19,7 @@ import {
   Info,
   Layers,
   Pencil,
+  TrendingUp,
   Users,
   X,
 } from 'lucide-react';
@@ -33,12 +34,14 @@ import { EncuestasManager } from '../plan/EncuestasManager';
 import { FormatosDescargasView } from '../plan/FormatosDescargasView';
 import { Presupuesto2027View } from '../plan/Presupuesto2027View';
 import { RegistroEncuestasView } from '../plan/RegistroEncuestasView';
+import { SeguimientoIndicadoresView } from '../plan/SeguimientoIndicadoresView';
 
-type PlanSubTab =
+export type PlanSubTab =
   | 'general'
   | 'actividades'
   | 'presupuesto'
   | 'cronograma'
+  | 'seguimiento'
   | 'encuestas'
   | 'registroEncuestas'
   | 'asistencia'
@@ -61,6 +64,7 @@ const SUB_TABS: Array<{ id: PlanSubTab; label: string; icon: typeof Info }> = [
   { id: 'actividades', label: 'Dimensiones y Fichas (9)', icon: Layers },
   { id: 'presupuesto', label: 'Presupuesto General 2027', icon: DollarSign },
   { id: 'cronograma', label: 'Cronograma y Gantt 2027', icon: CalendarRange },
+  { id: 'seguimiento', label: 'Seguimiento e Indicadores', icon: TrendingUp },
   { id: 'encuestas', label: 'Diligenciar Encuesta', icon: ClipboardCheck },
   { id: 'registroEncuestas', label: 'Registro de Encuestas', icon: Database },
   { id: 'asistencia', label: 'Registro de Asistencia', icon: ClipboardList },
@@ -68,11 +72,36 @@ const SUB_TABS: Array<{ id: PlanSubTab; label: string; icon: typeof Info }> = [
   { id: 'formatos', label: 'Formatos en Blanco', icon: FileSpreadsheet },
 ];
 
-export function ProgramasBienestarSection() {
+interface ProgramasBienestarSectionProps {
+  activeSubTab?: PlanSubTab;
+  onChangeSubTab?: (tab: PlanSubTab) => void;
+  selectedDimensionProp?: 'ALL' | DimensionBienestar;
+  onChangeDimensionProp?: (dim: 'ALL' | DimensionBienestar) => void;
+  selectedActividadIdProp?: string | null;
+  onChangeActividadIdProp?: (id: string | null) => void;
+}
+
+export function ProgramasBienestarSection({
+  activeSubTab,
+  onChangeSubTab,
+  selectedDimensionProp,
+  onChangeDimensionProp,
+  selectedActividadIdProp,
+  onChangeActividadIdProp,
+}: ProgramasBienestarSectionProps = {}) {
   const { state, updatePlanGeneral, updatePrograma } = useBienestar();
-  const [activeTab, setActiveTab] = useState<PlanSubTab>('general');
-  const [selectedDimension, setSelectedDimension] = useState<'ALL' | DimensionBienestar>('ALL');
-  const [selectedActividadId, setSelectedActividadId] = useState<string | null>(null);
+  const [localTab, setLocalTab] = useState<PlanSubTab>('general');
+  const [localDimension, setLocalDimension] = useState<'ALL' | DimensionBienestar>('ALL');
+  const [localActividadId, setLocalActividadId] = useState<string | null>(null);
+
+  const activeTab = activeSubTab ?? localTab;
+  const setActiveTab = onChangeSubTab ?? setLocalTab;
+  const selectedDimension = selectedDimensionProp ?? localDimension;
+  const setSelectedDimension = onChangeDimensionProp ?? setLocalDimension;
+  const selectedActividadId =
+    selectedActividadIdProp !== undefined ? selectedActividadIdProp : localActividadId;
+  const setSelectedActividadId = onChangeActividadIdProp ?? setLocalActividadId;
+
   const [contextActividadId, setContextActividadId] = useState<string | undefined>(undefined);
   const [editingPlanGeneral, setEditingPlanGeneral] = useState(false);
   const [generalDraft, setGeneralDraft] = useState<PlanGeneralInfo>(state.planGeneral);
@@ -278,6 +307,7 @@ export function ProgramasBienestarSection() {
                   <button
                     key={dim.id}
                     type="button"
+                    data-piggy-target="true"
                     onClick={() => handleSelectDimension(dim.id)}
                     className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-[#D61F26] hover:-translate-y-0.5 hover:shadow-sm cursor-pointer"
                   >
@@ -405,7 +435,11 @@ export function ProgramasBienestarSection() {
                             {act.fechaFin || '2027-12-31'}
                           </p>
                           <p>
-                            <strong className="text-[#0F294A]">Presupuesto:</strong>{' '}
+                            <strong className="text-[#0F294A]">
+                              {state.presupuestoGeneral2027.estadoAprobacion === 'Aprobado por Gerencia'
+                                ? 'Presupuesto:'
+                                : 'Proyectado:'}
+                            </strong>{' '}
                             {new Intl.NumberFormat('es-CO', {
                               style: 'currency',
                               currency: 'COP',
@@ -429,6 +463,7 @@ export function ProgramasBienestarSection() {
 
                         <button
                           type="button"
+                          data-piggy-target="true"
                           onClick={() => setSelectedActividadId(act.id)}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0F294A] px-4 py-2.5 text-xs font-bold text-[#FACC15] transition-colors hover:bg-[#D61F26] hover:text-white cursor-pointer"
                         >
@@ -449,6 +484,9 @@ export function ProgramasBienestarSection() {
 
       {/* SUBPÁGINA D: CRONOGRAMA Y DIAGRAMA DE GANTT 2027 */}
       {activeTab === 'cronograma' && <CronogramaGanttView />}
+
+      {/* SUBPÁGINA D2: SEGUIMIENTO E INDICADORES */}
+      {activeTab === 'seguimiento' && <SeguimientoIndicadoresView />}
 
       {/* SUBPÁGINA E: DILIGENCIAR ENCUESTAS DE SATISFACCIÓN */}
       {activeTab === 'encuestas' && (

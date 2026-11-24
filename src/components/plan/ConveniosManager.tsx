@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useBienestar } from '../../context/BienestarContext';
 import { ConvenioItem } from '../../types/bienestar';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 const EMPTY_CONVENIO: Omit<ConvenioItem, 'id'> = {
   nombreConvenio: '',
@@ -28,6 +29,7 @@ export function ConveniosManager() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ConvenioItem | null>(null);
   const [form, setForm] = useState<Omit<ConvenioItem, 'id'>>(EMPTY_CONVENIO);
+  const [pendingDelete, setPendingDelete] = useState<ConvenioItem | null>(null);
 
   const openCreate = () => {
     setEditing(null);
@@ -114,8 +116,8 @@ export function ConveniosManager() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => deleteConvenio(conv.id)}
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-[#FEE2E2] hover:text-[#D61F26]"
+                    onClick={() => setPendingDelete(conv)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-[#FEE2E2] hover:text-[#D61F26] cursor-pointer"
                     aria-label={`Eliminar ${conv.nombreConvenio}`}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -264,6 +266,20 @@ export function ConveniosManager() {
           </form>
         </div>
       )}
+
+      <ConfirmModal
+        open={Boolean(pendingDelete)}
+        title="¿Eliminar convenio institucional?"
+        description={`Se eliminará "${pendingDelete?.nombreConvenio}" (${pendingDelete?.entidad}) del registro de convenios.`}
+        confirmLabel="Sí, eliminar"
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (pendingDelete) {
+            deleteConvenio(pendingDelete.id);
+            setPendingDelete(null);
+          }
+        }}
+      />
     </div>
   );
 }

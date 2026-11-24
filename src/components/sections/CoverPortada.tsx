@@ -60,7 +60,8 @@ export function CoverPortada({ empresa, onStart }: CoverPortadaProps) {
             className="h-16 w-auto object-contain sm:h-20"
             referrerPolicy="no-referrer"
           />
-          <div className="border-l-2 border-[#FACC15] pl-3.5">
+          <div className="h-9 w-px bg-[#FACC15]" aria-hidden="true" />
+          <div>
             <p className="text-base font-extrabold tracking-tight text-[#D61F26] sm:text-lg">
               {empresa}
             </p>

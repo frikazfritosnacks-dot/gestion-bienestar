@@ -17,7 +17,11 @@ import { NormogramaManager } from '../manual/NormogramaManager';
 import { TerminologiaManager } from '../manual/TerminologiaManager';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import { ChipSvg } from '../ui/ChipGraphics';
-import { buildWordFilename, generateManualWordBlob } from '../../utils/wordManualGenerator';
+import {
+  buildWordFilename,
+  downloadManualMatrizFlujogramaThreeWord,
+  generateManualWordBlob,
+} from '../../utils/wordManualGenerator';
 
 interface ManualSectionProps {
   activeSubTab: ManualSubSectionId;
@@ -47,6 +51,7 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
   } = useBienestar();
 
   const [downloadingWord, setDownloadingWord] = useState(false);
+  const [downloadingThreeWord, setDownloadingThreeWord] = useState(false);
 
   // Encabezado documental del manual (sin subapartado independiente de portada)
   const [editingHeaderMeta, setEditingHeaderMeta] = useState(false);
@@ -75,6 +80,22 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
       notify('No fue posible generar el archivo Word. Inténtalo nuevamente.', 'warning');
     } finally {
       setDownloadingWord(false);
+    }
+  };
+
+  const handleDownloadThreeWord = async () => {
+    if (downloadingThreeWord) return;
+    setDownloadingThreeWord(true);
+    try {
+      if (hasPendingWordSync) {
+        syncWordDocument(true);
+      }
+      await downloadManualMatrizFlujogramaThreeWord(state);
+      notify('Descargados los 3 documentos Word independientes: Manual, Matriz Detallada y Flujograma.');
+    } catch {
+      notify('No fue posible generar los 3 archivos Word. Inténtalo nuevamente.', 'warning');
+    } finally {
+      setDownloadingThreeWord(false);
     }
   };
 
@@ -390,16 +411,25 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                 <button
                   type="button"
                   onClick={handleDownloadWord}
-                  disabled={downloadingWord}
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#0F294A] border-b-2 border-[#FACC15] px-4 py-2.5 text-xs font-bold tracking-wide text-white shadow-xs transition-all duration-150 hover:bg-[#D61F26] hover:-translate-y-0.5 disabled:opacity-60 whitespace-nowrap shrink-0"
+                  disabled={downloadingWord || downloadingThreeWord}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#0F294A] border-b-2 border-[#FACC15] px-4 py-2.5 text-xs font-bold tracking-wide text-white shadow-xs transition-all duration-150 hover:bg-[#D61F26] hover:-translate-y-0.5 disabled:opacity-60 whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   <FileDown className="h-4 w-4 text-[#FACC15]" />
                   {downloadingWord ? 'GENERANDO WORD...' : 'DESCARGAR MANUAL EN WORD'}
                 </button>
                 <button
                   type="button"
+                  onClick={handleDownloadThreeWord}
+                  disabled={downloadingWord || downloadingThreeWord}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-3.5 py-2.5 text-xs font-bold text-white shadow-xs transition-all duration-150 hover:bg-[#B3161C] disabled:opacity-60 whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <FileDown className="h-4 w-4 text-[#FACC15]" />
+                  {downloadingThreeWord ? 'GENERANDO 3 WORD...' : 'Descargar 3 Word (Manual + Matriz + Flujograma)'}
+                </button>
+                <button
+                  type="button"
                   onClick={() => setEditingHeaderMeta(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2.5 text-xs font-semibold text-[#0F294A] transition-all duration-150 hover:bg-[#FDE047] whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2.5 text-xs font-semibold text-[#0F294A] transition-all duration-150 hover:bg-[#FDE047] whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   <Pencil className="h-3.5 w-3.5 text-[#D61F26]" />
                   Editar caja de calidad

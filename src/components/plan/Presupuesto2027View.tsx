@@ -1,20 +1,28 @@
 import { useMemo, useState } from 'react';
 import {
-  AlertTriangle,
+  AlertCircle,
   Check,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Clock3,
   DollarSign,
+  FileCheck2,
   FileSpreadsheet,
+  History,
   Lock,
   Plus,
-  ShieldAlert,
+  ShieldCheck,
   Trash2,
-  Unlock,
+  Users,
+  X,
 } from 'lucide-react';
 import { useBienestar } from '../../context/BienestarContext';
 import { PresupuestoCostoItem } from '../../types/bienestar';
 import { downloadSingleExcelFormat } from '../../utils/excelFormatsGenerator';
+import { ConfirmModal } from '../ui/ConfirmModal';
+
+const GERENCIA_PIN = '2027';
 
 function formatCop(value: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -24,25 +32,52 @@ function formatCop(value: number): string {
   }).format(value || 0);
 }
 
+function formatDateTime(iso?: string): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('es-CO', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 /**
  * Sección «Presupuesto General 2027»:
- * Presupuesto MiPyme para 10 trabajadores ($2.150.000 COP base), reserva separada para imprevistos,
- * control de ejecución presupuestal y desglose completo de costos por actividad.
+ * Inicia como «Propuesta pendiente de aprobación» sin reserva ficticia ($200.000 eliminada)
+ * y sin mostrar montos aprobados, ejecutados ni disponibles hasta aprobación formal de Gerencia.
  */
 export function Presupuesto2027View() {
   const {
     state,
-    updatePresupuestoGeneralConfig,
     addPresupuestoCostoItem,
     updatePresupuestoCostoItem,
     deletePresupuestoCostoItem,
+    reviewPresupuestoGerencia,
     notify,
   } = useBienestar();
 
   const budget = state.presupuestoGeneral2027;
+  const isApproved = budget.estadoAprobacion === 'Aprobado por Gerencia';
+  const isAdjustment = budget.estadoAprobacion === 'En ajuste';
+
   const [expandedActId, setExpandedActId] = useState<string>('act-5');
   const [addingForActId, setAddingForActId] = useState<string | null>(null);
   const [exportingKey, setExportingKey] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [pendingDeleteItem, setPendingDeleteItem] = useState<PresupuestoCostoItem | null>(null);
+
+  // Modal de Revisión y Aprobación de Gerencia
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [gerenteNombre, setGerenteNombre] = useState(budget.gerenteAprobador || '');
+  const [pinInput, setPinInput] = useState('');
+  const [observacionesGerencia, setObservacionesGerencia] = useState(
+    budget.observacionesGerencia || ''
+  );
+  const [reviewError, setReviewError] = useState('');
 
   const [newItemDraft, setNewItemDraft] = useState<Omit<PresupuestoCostoItem, 'id' | 'actividadId'>>({
     recursoMaterial: '',
@@ -54,107 +89,51 @@ export function Presupuesto2027View() {
   });
 
   const totals = useMemo(() => {
-    const subtotalActividades = state.planBienestar.reduce(
-      (acc, a) => acc + (a.presupuesto || 0),
+    const projectedTotal = budget.items.reduce(
+      (acc, it) => acc + Math.max(0, it.cantidad) * Math.max(0, it.valorUnitario),
       0
     );
-    const ejecutadoActividades = state.planBienestar.reduce(
-      (acc, a) => acc + (a.presupuestoEjecutado || 0),
-      0
-    );
-    const reservaAsignada = budget.reservaImprevistos || 0;
-    const reservaEjecutada = budget.reservaAutorizada
-      ? Math.min(reservaAsignada, budget.reservaEjecutada || 0)
+    const ejecutadoReal = isApproved
+      ? budget.items.reduce((acc, it) => acc + Math.max(0, it.ejecutado || 0), 0)
       : 0;
-    const totalAsignadoMasReserva = subtotalActividades + reservaAsignada;
-    const presupuestoAprobado = budget.presupuestoTotalAprobado || 0;
-    const totalEjecutado = ejecutadoActividades + reservaEjecutada;
-    const disponible = presupuestoAprobado - totalEjecutado;
-    const diferenciaAsignacion = presupuestoAprobado - totalAsignadoMasReserva;
+    const aprobadoGerencia = isApproved ? budget.presupuestoTotalAprobado || projectedTotal : 0;
+    const disponibleReal = isApproved ? aprobadoGerencia - ejecutadoReal : 0;
     const pctEjecucion =
-      presupuestoAprobado > 0
-        ? Math.round((totalEjecutado / presupuestoAprobado) * 1000) / 10
+      isApproved && aprobadoGerencia > 0
+        ? Math.round((ejecutadoReal / aprobadoGerencia) * 1000) / 10
         : 0;
-    const pctActividadesEjec =
-      subtotalActividades > 0
-        ? Math.round((ejecutadoActividades / subtotalActividades) * 1000) / 10
-        : 0;
-    const superaPresupuesto = totalAsignadoMasReserva > presupuestoAprobado;
+    const actividadesConCosto = state.planBienestar.filter((a) => (a.presupuesto || 0) > 0).length;
+    const actividadesSinCosto = state.planBienestar.length - actividadesConCosto;
+    const diferenciaProyeccionVsAprobado = isApproved ? aprobadoGerencia - projectedTotal : 0;
 
     return {
-      subtotalActividades,
-      ejecutadoActividades,
-      reservaAsignada,
-      reservaEjecutada,
-      totalAsignadoMasReserva,
-      presupuestoAprobado,
-      totalEjecutado,
-      disponible,
-      diferenciaAsignacion,
+      projectedTotal,
+      ejecutadoReal,
+      aprobadoGerencia,
+      disponibleReal,
       pctEjecucion,
-      pctActividadesEjec,
-      superaPresupuesto,
-      exceso: Math.max(0, totalAsignadoMasReserva - presupuestoAprobado),
+      actividadesConCosto,
+      actividadesSinCosto,
+      diferenciaProyeccionVsAprobado,
     };
-  }, [state.planBienestar, budget]);
-
-  const handleUpdateApprovedBudget = (nextApproved: number) => {
-    const val = Math.max(0, nextApproved);
-    if (totals.totalAsignadoMasReserva > val) {
-      notify(
-        `Alerta: La suma de asignaciones (${formatCop(totals.totalAsignadoMasReserva)}) supera el presupuesto aprobado (${formatCop(val)}).`,
-        'warning'
-      );
-    }
-    updatePresupuestoGeneralConfig({ presupuestoTotalAprobado: val });
-  };
-
-  const handleUpdateReserva = (nextReserva: number) => {
-    const val = Math.max(0, nextReserva);
-    const nextSum = totals.subtotalActividades + val;
-    if (nextSum > totals.presupuestoAprobado) {
-      notify(
-        `Alerta presupuestal: Con esa reserva el total (${formatCop(nextSum)}) supera el presupuesto general aprobado (${formatCop(totals.presupuestoAprobado)}).`,
-        'warning'
-      );
-    }
-    updatePresupuestoGeneralConfig({ reservaImprevistos: val });
-  };
+  }, [budget, isApproved, state.planBienestar]);
 
   const handleItemChange = (
     item: PresupuestoCostoItem,
     patch: Partial<PresupuestoCostoItem>
   ) => {
-    const updated: PresupuestoCostoItem = { ...item, ...patch };
-    const prevCost = item.cantidad * item.valorUnitario;
-    const nextCost = updated.cantidad * updated.valorUnitario;
-    const projectedSum = totals.totalAsignadoMasReserva - prevCost + nextCost;
-
-    if (projectedSum > totals.presupuestoAprobado) {
-      notify(
-        `Alerta: Este ajuste eleva el total a ${formatCop(projectedSum)} y supera el presupuesto general aprobado (${formatCop(totals.presupuestoAprobado)}).`,
-        'warning'
-      );
-    }
-    updatePresupuestoCostoItem(updated);
+    updatePresupuestoCostoItem({ ...item, ...patch });
   };
 
   const handleAddItemSubmit = (e: React.FormEvent, actividadId: string) => {
     e.preventDefault();
-    if (!newItemDraft.recursoMaterial.trim()) return;
-    const addedCost = Math.max(0, newItemDraft.cantidad) * Math.max(0, newItemDraft.valorUnitario);
-    const projectedSum = totals.totalAsignadoMasReserva + addedCost;
-    if (projectedSum > totals.presupuestoAprobado) {
-      notify(
-        `Alerta: Al agregar este ítem el total (${formatCop(projectedSum)}) supera el presupuesto general aprobado (${formatCop(totals.presupuestoAprobado)}). Ajusta los montos o aumenta el presupuesto aprobado.`,
-        'warning'
-      );
-    }
-    addPresupuestoCostoItem({
+    const res = addPresupuestoCostoItem({
       actividadId,
       ...newItemDraft,
       recursoMaterial: newItemDraft.recursoMaterial.trim(),
+      ejecutado: 0,
     });
+    if (!res.ok) return;
     setAddingForActId(null);
     setNewItemDraft({
       recursoMaterial: '',
@@ -166,12 +145,42 @@ export function Presupuesto2027View() {
     });
   };
 
+  const handleGerenciaSubmit = (decision: 'Aprobado por Gerencia' | 'En ajuste') => {
+    setReviewError('');
+    if (!gerenteNombre.trim()) {
+      setReviewError('Ingresa el nombre completo de la Gerente.');
+      return;
+    }
+    if (pinInput.trim() !== GERENCIA_PIN) {
+      setReviewError('PIN de autorización de Gerencia incorrecto (PIN institucional: 2027).');
+      return;
+    }
+    if (decision === 'En ajuste' && !observacionesGerencia.trim()) {
+      setReviewError('Registra las observaciones de ajuste solicitadas por Gerencia.');
+      return;
+    }
+
+    const res = reviewPresupuestoGerencia({
+      decision,
+      gerenteNombre: gerenteNombre.trim(),
+      observaciones: observacionesGerencia.trim(),
+    });
+    if (!res.ok) {
+      setReviewError(res.error || 'No fue posible registrar la decisión.');
+      return;
+    }
+    setPinInput('');
+    setReviewOpen(false);
+  };
+
   const handleExport = async (key: 'presupuesto_general' | 'desglose_presupuestal') => {
     if (exportingKey) return;
     setExportingKey(key);
     try {
       const file = await downloadSingleExcelFormat(key, state);
       notify(`Excel descargado: ${file}`);
+    } catch {
+      notify('No fue posible generar el archivo Excel. Inténtalo de nuevo.', 'warning');
     } finally {
       setExportingKey(null);
     }
@@ -179,10 +188,10 @@ export function Presupuesto2027View() {
 
   return (
     <div className="space-y-7">
-      {/* Encabezado de sección y botones Excel */}
+      {/* Encabezado de sección, estado oficial de la propuesta y descargas */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 space-y-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1 max-w-2xl">
+          <div className="space-y-1.5 max-w-2xl">
             <p className="text-xs font-extrabold uppercase tracking-wide text-[#D61F26]">
               MIPYME FRIKAZ S.A.S. · {budget.poblacionTrabajadores} TRABAJADORES · ENERO A DICIEMBRE 2027
             </p>
@@ -190,13 +199,30 @@ export function Presupuesto2027View() {
               Presupuesto General 2027
             </h2>
             <p className="text-xs leading-relaxed text-slate-600 sm:text-sm">
-              Planeación financiera realista para una empresa pequeña de 10 trabajadores. Prioriza
-              recursos internos, costos desglosados por ítem y control automático frente al tope
-              anual aprobado.
+              Propuesta financiera ajustada para los 10 colaboradores de Frikaz S.A.S. Edita
+              cantidades, precios unitarios y recursos en tiempo real con trazabilidad automática de
+              cambios antes y después de la aprobación de Gerencia.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setReviewError('');
+                setGerenteNombre(budget.gerenteAprobador || '');
+                setObservacionesGerencia(budget.observacionesGerencia || '');
+                setReviewOpen(true);
+              }}
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold cursor-pointer whitespace-nowrap ${
+                isApproved
+                  ? 'border border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                  : 'bg-[#D61F26] border-b-2 border-[#FACC15] text-white hover:bg-[#B3161C]'
+              }`}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              {isApproved ? 'Revisar / Ajustar Aprobación' : 'Revisión y Aprobación de Gerencia'}
+            </button>
             <button
               type="button"
               onClick={() => handleExport('presupuesto_general')}
@@ -206,7 +232,7 @@ export function Presupuesto2027View() {
               <FileSpreadsheet className="h-4 w-4 text-[#FACC15]" />
               {exportingKey === 'presupuesto_general'
                 ? 'Generando...'
-                : 'Descargar Presupuesto General (.xlsx)'}
+                : 'Presupuesto en Blanco (.xlsx)'}
             </button>
             <button
               type="button"
@@ -217,248 +243,308 @@ export function Presupuesto2027View() {
               <FileSpreadsheet className="h-4 w-4 text-[#D61F26]" />
               {exportingKey === 'desglose_presupuestal'
                 ? 'Generando...'
-                : 'Descargar Desglose por Actividad (.xlsx)'}
+                : 'Desglose en Blanco (.xlsx)'}
             </button>
           </div>
         </div>
 
-        {/* Alerta automática cuando se supera el presupuesto general */}
-        {totals.superaPresupuesto && (
-          <div
-            role="alert"
-            className="flex flex-col gap-3 rounded-xl border-2 border-[#D61F26] bg-[#FEF2F2] p-4 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[#D61F26]" />
-              <div className="text-xs text-[#0F294A]">
-                <p className="font-extrabold text-[#D61F26]">
-                  ALERTA PRESUPUESTAL: La suma de asignaciones y reserva supera el presupuesto
-                  general aprobado.
-                </p>
-                <p className="mt-1">
-                  Asignado actividades ({formatCop(totals.subtotalActividades)}) + Reserva (
-                  {formatCop(totals.reservaAsignada)}) ={' '}
-                  <strong>{formatCop(totals.totalAsignadoMasReserva)}</strong> · Tope aprobado:{' '}
-                  <strong>{formatCop(totals.presupuestoAprobado)}</strong> · Exceso:{' '}
-                  <strong className="text-[#D61F26]">{formatCop(totals.exceso)}</strong>.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleUpdateApprovedBudget(totals.totalAsignadoMasReserva)}
-              className="rounded-lg bg-[#D61F26] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#B3161C] whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              Ajustar aprobado a {formatCop(totals.totalAsignadoMasReserva)}
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* Tarjetas de control automático */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-2xl border-2 border-[#0F294A] bg-white p-5">
-          <label
-            htmlFor="presupuesto-total-aprobado"
-            className="flex items-center justify-between text-xs font-extrabold text-[#0F294A]"
-          >
-            <span>Presupuesto Total Aprobado</span>
-            <DollarSign className="h-4 w-4 text-[#D61F26]" />
-          </label>
-          <input
-            id="presupuesto-total-aprobado"
-            type="number"
-            min={0}
-            step={10000}
-            value={budget.presupuestoTotalAprobado}
-            onChange={(e) => handleUpdateApprovedBudget(Number(e.target.value) || 0)}
-            className="mt-2 w-full rounded-lg border border-slate-300 bg-[#F8FAFC] px-3 py-1.5 font-display text-xl font-extrabold text-[#0F294A] tabular-nums focus:border-[#D61F26] focus:bg-white focus:outline-none"
-          />
-          <p className="mt-1.5 text-[11px] text-slate-500">
-            Editable · Base inicial: $2.150.000 COP
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <p className="text-xs font-bold text-slate-500">Subtotal 9 Actividades</p>
-          <p className="mt-2 font-display text-2xl font-extrabold text-[#0F294A] tabular-nums">
-            {formatCop(totals.subtotalActividades)}
-          </p>
-          <p className="mt-1 text-[11px] text-slate-600 tabular-nums">
-            Sin reserva · Margen sin asignar:{' '}
-            <strong className={totals.diferenciaAsignacion < 0 ? 'text-[#D61F26]' : 'text-emerald-700'}>
-              {formatCop(totals.diferenciaAsignacion)}
-            </strong>
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-[#FDE047] bg-[#FFFBEB] p-5">
-          <p className="text-xs font-bold text-[#0F294A]">Dinero Ejecutado</p>
-          <p className="mt-2 font-display text-2xl font-extrabold text-[#D61F26] tabular-nums">
-            {formatCop(totals.totalEjecutado)}
-          </p>
-          <p className="mt-1 text-[11px] text-[#0F294A]/75 tabular-nums">
-            Ejecución presupuestal: <strong>{totals.pctEjecucion}%</strong>
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <p className="text-xs font-bold text-slate-500">Dinero Disponible</p>
-          <p className="mt-2 font-display text-2xl font-extrabold text-emerald-700 tabular-nums">
-            {formatCop(totals.disponible)}
-          </p>
-          <p className="mt-1 text-[11px] text-slate-600 tabular-nums">
-            Diferencia (Presup. − Ejec.): {formatCop(totals.disponible)}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-[#0F294A]/20 bg-[#EFF6FF] p-5">
-          <div className="flex items-center justify-between text-xs font-extrabold text-[#0F294A]">
-            <span>Reserva Imprevistos</span>
-            {budget.reservaAutorizada ? (
-              <Unlock className="h-4 w-4 text-[#D61F26]" />
+        {/* Banner de estado formal de Gerencia */}
+        <div
+          className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
+            isApproved
+              ? 'border-emerald-300 bg-emerald-50/70'
+              : isAdjustment
+                ? 'border-[#FCA5A5] bg-[#FEF2F2]'
+                : 'border-[#FDE047] bg-[#FFFBEB]'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            {isApproved ? (
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
+            ) : isAdjustment ? (
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#D61F26]" />
             ) : (
-              <Lock className="h-4 w-4 text-[#0F294A]" />
+              <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-[#B45309]" />
             )}
-          </div>
-          <p className="mt-2 font-display text-2xl font-extrabold text-[#0F294A] tabular-nums">
-            {formatCop(totals.reservaAsignada)}
-          </p>
-          <p className="mt-1 text-[11px] text-[#0F294A]/75">
-            {budget.reservaAutorizada
-              ? `Autorizada (${formatCop(totals.reservaEjecutada)} ejecutados)`
-              : 'Separada · No contabilizada como ejecutada'}
-          </p>
-        </div>
-      </section>
-
-      {/* Panel de Reserva para imprevistos (control estricto de autorización) */}
-      <section className="rounded-2xl border border-[#0F294A]/15 bg-white p-6 space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
-          <div className="flex items-start gap-2.5">
-            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-[#D61F26]" />
-            <div>
-              <h3 className="font-display text-base font-extrabold text-[#0F294A]">
-                Control de Reserva para Imprevistos 2027
-              </h3>
-              <p className="text-xs text-slate-600">
-                Se mantiene separada del gasto operativo y no se suma al dinero ejecutado hasta que
-                exista autorización formal de Gerencia.
+            <div className="text-xs text-[#0F294A]">
+              <p className="font-extrabold">
+                Estado del Presupuesto General 2027:{' '}
+                <span className={isApproved ? 'text-emerald-800' : 'text-[#D61F26]'}>
+                  {budget.estadoAprobacion}
+                </span>
               </p>
+              {isApproved ? (
+                <p className="mt-1 text-slate-700">
+                  Aprobado por <strong>{budget.gerenteAprobador}</strong> el{' '}
+                  {formatDateTime(budget.fechaAprobacion)}. Ya está habilitado el registro de
+                  ejecución real por cada recurso.
+                  {budget.observacionesGerencia ? ` Nota: ${budget.observacionesGerencia}` : ''}
+                </p>
+              ) : isAdjustment ? (
+                <p className="mt-1 text-slate-700">
+                  Observaciones de Gerencia ({budget.gerenteAprobador}):{' '}
+                  <strong>{budget.observacionesGerencia}</strong>. Realiza los ajustes en el
+                  desglose y vuelve a presentar a aprobación.
+                </p>
+              ) : (
+                <p className="mt-1 text-slate-700">
+                  Este presupuesto corresponde a una <strong>propuesta proyectada</strong> pendiente
+                  de aprobación por parte de la Gerente. Hasta su aprobación formal, no se registran
+                  montos aprobados, ejecutados ni saldos disponibles.
+                </p>
+              )}
             </div>
           </div>
 
           <button
             type="button"
-            onClick={() =>
-              updatePresupuestoGeneralConfig({
-                reservaAutorizada: !budget.reservaAutorizada,
-                reservaEjecutada: !budget.reservaAutorizada ? budget.reservaEjecutada : 0,
-              })
-            }
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-              budget.reservaAutorizada
-                ? 'bg-[#D61F26] text-white'
-                : 'border border-slate-300 bg-slate-50 text-[#0F294A] hover:bg-[#FEF9C3]'
-            }`}
+            onClick={() => setShowHistory((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-[#0F294A] hover:border-[#0F294A] shrink-0 cursor-pointer"
           >
-            {budget.reservaAutorizada ? (
-              <>
-                <Unlock className="h-3.5 w-3.5" />
-                Reserva autorizada (clic para bloquear)
-              </>
-            ) : (
-              <>
-                <Lock className="h-3.5 w-3.5" />
-                Autorizar uso de reserva
-              </>
-            )}
+            <History className="h-3.5 w-3.5 text-[#D61F26]" />
+            Historial ({budget.historialModificaciones?.length || 0})
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 text-xs">
-          <div>
-            <label className="mb-1 block font-bold text-[#0F294A]">
-              Valor de reserva asignado (COP)
-            </label>
-            <input
-              type="number"
-              min={0}
-              step={10000}
-              value={budget.reservaImprevistos}
-              onChange={(e) => handleUpdateReserva(Number(e.target.value) || 0)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono font-bold text-[#0F294A]"
-            />
+        {/* Alerta automática si una modificación posterior excede el monto aprobado por Gerencia */}
+        {isApproved && totals.diferenciaProyeccionVsAprobado < 0 && (
+          <div
+            role="alert"
+            className="flex flex-col gap-3 rounded-xl border border-[#D61F26] bg-[#FEF2F2] p-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="flex items-start gap-2.5 text-xs text-[#0F294A]">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#D61F26]" />
+              <p>
+                La proyección actual ({formatCop(totals.projectedTotal)}) supera en{' '}
+                <strong className="text-[#D61F26]">
+                  {formatCop(Math.abs(totals.diferenciaProyeccionVsAprobado))}
+                </strong>{' '}
+                el monto aprobado por Gerencia ({formatCop(totals.aprobadoGerencia)}). Requiere
+                nueva revisión de Gerencia.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReviewOpen(true)}
+              className="rounded-lg bg-[#D61F26] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#B3161C] shrink-0 cursor-pointer"
+            >
+              Actualizar aprobación
+            </button>
           </div>
-          <div>
-            <label className="mb-1 block font-bold text-[#0F294A]">
-              Monto ejecutado de reserva (requiere autorización)
-            </label>
-            <input
-              type="number"
-              min={0}
-              max={budget.reservaImprevistos}
-              step={5000}
-              disabled={!budget.reservaAutorizada}
-              value={budget.reservaAutorizada ? budget.reservaEjecutada : 0}
-              onChange={(e) =>
-                updatePresupuestoGeneralConfig({
-                  reservaEjecutada: Math.min(
-                    budget.reservaImprevistos,
-                    Math.max(0, Number(e.target.value) || 0)
-                  ),
-                })
-              }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono font-bold text-[#0F294A] disabled:bg-slate-100 disabled:text-slate-400"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block font-bold text-[#0F294A]">
-              Soporte / motivo de autorización
-            </label>
-            <input
-              type="text"
-              disabled={!budget.reservaAutorizada}
-              placeholder={
-                budget.reservaAutorizada
-                  ? 'Ej. Acta #04 aprobada por Gerencia'
-                  : 'Bloqueado hasta autorización'
-              }
-              value={budget.reservaMotivoAutorizacion}
-              onChange={(e) =>
-                updatePresupuestoGeneralConfig({ reservaMotivoAutorizacion: e.target.value })
-              }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs disabled:bg-slate-100"
-            />
-          </div>
-        </div>
+        )}
       </section>
 
-      {/* Tabla consolidada de distribución presupuestal + Desglose por actividad */}
+      {/* Tarjetas resumen: estrictamente reales según estado de aprobación */}
+      {!isApproved ? (
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border-2 border-[#0F294A] bg-white p-5">
+            <div className="flex items-center justify-between text-xs font-extrabold text-[#0F294A]">
+              <span>Valor Proyectado General</span>
+              <DollarSign className="h-4 w-4 text-[#D61F26]" />
+            </div>
+            <p className="mt-2 font-display text-2xl font-extrabold text-[#0F294A] tabular-nums">
+              {formatCop(totals.projectedTotal)}
+            </p>
+            <p className="mt-1 text-[11px] text-slate-600">
+              Suma automática en tiempo real de los recursos propuestos
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#FDE047] bg-[#FFFBEB] p-5">
+            <div className="flex items-center justify-between text-xs font-bold text-[#0F294A]">
+              <span>Estado de Aprobación</span>
+              <Clock3 className="h-4 w-4 text-[#B45309]" />
+            </div>
+            <p className="mt-2 font-display text-lg font-extrabold text-[#D61F26]">
+              {budget.estadoAprobacion}
+            </p>
+            <p className="mt-1 text-[11px] text-slate-600">
+              A la espera de revisión formal de Gerencia
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+              <span>Cobertura de Actividades</span>
+              <FileCheck2 className="h-4 w-4 text-[#0F294A]" />
+            </div>
+            <p className="mt-2 font-display text-2xl font-extrabold text-[#0F294A] tabular-nums">
+              {totals.actividadesConCosto} con costo · {totals.actividadesSinCosto} internas
+            </p>
+            <p className="mt-1 text-[11px] text-slate-600">
+              9 actividades proyectadas de enero a diciembre 2027
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+              <span>Ejecución y Saldos</span>
+              <Lock className="h-4 w-4 text-slate-400" />
+            </div>
+            <p className="mt-2 font-display text-base font-extrabold text-slate-600">
+              Sin valores aprobados aún
+            </p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Se habilitan únicamente cuando la Gerente apruebe la propuesta
+            </p>
+          </div>
+        </section>
+      ) : (
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border-2 border-[#0F294A] bg-white p-5">
+            <div className="flex items-center justify-between text-xs font-extrabold text-[#0F294A]">
+              <span>Presupuesto Aprobado por Gerencia</span>
+              <ShieldCheck className="h-4 w-4 text-emerald-700" />
+            </div>
+            <p className="mt-2 font-display text-2xl font-extrabold text-[#0F294A] tabular-nums">
+              {formatCop(totals.aprobadoGerencia)}
+            </p>
+            <p className="mt-1 text-[11px] text-slate-600">
+              Proyección actual: {formatCop(totals.projectedTotal)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#FDE047] bg-[#FFFBEB] p-5">
+            <div className="flex items-center justify-between text-xs font-bold text-[#0F294A]">
+              <span>Ejecutado Real Registrado</span>
+              <DollarSign className="h-4 w-4 text-[#D61F26]" />
+            </div>
+            <p className="mt-2 font-display text-2xl font-extrabold text-[#D61F26] tabular-nums">
+              {formatCop(totals.ejecutadoReal)}
+            </p>
+            <p className="mt-1 text-[11px] text-[#0F294A]/75 tabular-nums">
+              Ejecución real acumulada: <strong>{totals.pctEjecucion}%</strong>
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+              <span>Saldo Disponible Real</span>
+              <CheckCircle2 className="h-4 w-4 text-emerald-700" />
+            </div>
+            <p className="mt-2 font-display text-2xl font-extrabold text-emerald-700 tabular-nums">
+              {formatCop(totals.disponibleReal)}
+            </p>
+            <p className="mt-1 text-[11px] text-slate-600 tabular-nums">
+              Aprobado menos ejecutado real
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+              <span>Cobertura MiPyme 2027</span>
+              <Users className="h-4 w-4 text-[#0F294A]" />
+            </div>
+            <p className="mt-2 font-display text-2xl font-extrabold text-[#0F294A] tabular-nums">
+              {budget.poblacionTrabajadores} trabajadores
+            </p>
+            <p className="mt-1 text-[11px] text-slate-600">
+              {totals.actividadesConCosto} actividades con recurso · {totals.actividadesSinCosto} sin costo
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* Historial de modificaciones del presupuesto */}
+      {showHistory && (
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-[#D61F26]" />
+              <h3 className="font-display text-base font-extrabold text-[#0F294A]">
+                Historial de Modificaciones y Aprobación
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowHistory(false)}
+              className="rounded-lg p-1 text-slate-400 hover:text-[#D61F26] cursor-pointer"
+              aria-label="Cerrar historial"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {!budget.historialModificaciones || budget.historialModificaciones.length === 0 ? (
+            <p className="p-6 text-xs text-slate-500">
+              Aún no se han registrado modificaciones manuales sobre la propuesta inicial. Cada
+              edición de precio, cantidad, recurso o revisión de Gerencia quedará registrada aquí.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[740px] border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#0F294A] text-white">
+                    <th className="border border-slate-300 px-3 py-2 text-left">Fecha y hora</th>
+                    <th className="border border-slate-300 px-3 py-2 text-left">Tipo</th>
+                    <th className="border border-slate-300 px-3 py-2 text-left">Responsable</th>
+                    <th className="border border-slate-300 px-3 py-2 text-left">Detalle del cambio</th>
+                    <th className="border border-slate-300 px-3 py-2 text-right">Valor anterior</th>
+                    <th className="border border-slate-300 px-3 py-2 text-right">Valor nuevo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {budget.historialModificaciones.map((h) => (
+                    <tr key={h.id} className="hover:bg-slate-50/70">
+                      <td className="border border-slate-200 px-3 py-2 font-mono text-[11px] text-slate-600 whitespace-nowrap">
+                        {formatDateTime(h.fechaHora)}
+                      </td>
+                      <td className="border border-slate-200 px-3 py-2 font-bold text-[#0F294A]">
+                        {h.tipo}
+                      </td>
+                      <td className="border border-slate-200 px-3 py-2 text-slate-700">
+                        {h.usuario}
+                      </td>
+                      <td className="border border-slate-200 px-3 py-2 text-slate-700">
+                        {h.descripcion}
+                      </td>
+                      <td className="border border-slate-200 px-3 py-2 text-right font-mono tabular-nums text-slate-600">
+                        {formatCop(h.valorAnterior)}
+                      </td>
+                      <td className="border border-slate-200 px-3 py-2 text-right font-mono font-bold tabular-nums text-[#0F294A]">
+                        {formatCop(h.valorNuevo)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Tabla consolidada de proyección y desglose por actividad */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
         <div className="border-b border-slate-100 px-6 py-5">
           <h3 className="font-display text-lg font-extrabold text-[#0F294A]">
-            Distribución y Desglose de Costos por Actividad (9 Actividades)
+            Desglose Proyectado de Costos por Actividad (9 Actividades)
           </h3>
           <p className="mt-1 text-xs text-slate-600">
-            Haz clic en cualquier actividad para consultar, editar o agregar sus recursos,
-            cantidades, unidades de medida, valor unitario, valor total y dinero ejecutado.
+            Haz clic en cada actividad para consultar su valor proyectado, editar cantidades y
+            precios unitarios o agregar recursos.{' '}
+            {isApproved
+              ? 'El registro de ejecución real se encuentra habilitado.'
+              : 'La columna de ejecución real se habilitará al aprobarse el presupuesto por Gerencia.'}
           </p>
         </div>
 
         <div className="divide-y divide-slate-200">
           {state.planBienestar.map((act, idx) => {
             const actItems = budget.items.filter((it) => it.actividadId === act.id);
-            const isOpen = expandedActId === act.id;
-            const disponibleAct = (act.presupuesto || 0) - (act.presupuestoEjecutado || 0);
+            const actProjected = actItems.reduce(
+              (acc, it) => acc + Math.max(0, it.cantidad) * Math.max(0, it.valorUnitario),
+              0
+            );
+            const actExecuted = isApproved
+              ? actItems.reduce((acc, it) => acc + Math.max(0, it.ejecutado || 0), 0)
+              : 0;
+            const actAvailable = isApproved ? actProjected - actExecuted : 0;
             const pctAct =
-              act.presupuesto > 0
-                ? Math.round(((act.presupuestoEjecutado || 0) / act.presupuesto) * 100)
-                : 0;
+              isApproved && actProjected > 0 ? Math.round((actExecuted / actProjected) * 100) : 0;
+            const isOpen = expandedActId === act.id;
 
             return (
               <div key={act.id} className="bg-white">
-                {/* Fila resumen de actividad */}
                 <button
                   type="button"
                   onClick={() => setExpandedActId(isOpen ? '' : act.id)}
@@ -470,6 +556,8 @@ export function Presupuesto2027View() {
                         #{String(act.numero || idx + 1).padStart(2, '0')}
                       </span>
                       <span>· {act.dimension.toUpperCase()}</span>
+                      <span className="text-slate-400">·</span>
+                      <span className="text-slate-600">{actItems.length} ítem(s)</span>
                     </div>
                     <p className="font-display text-base font-extrabold text-[#0F294A]">
                       {act.actividad}
@@ -479,29 +567,35 @@ export function Presupuesto2027View() {
 
                   <div className="flex flex-wrap items-center gap-5 text-xs tabular-nums">
                     <div>
-                      <span className="block text-[11px] text-slate-500">Presupuestado</span>
+                      <span className="block text-[11px] text-slate-500">
+                        {isApproved ? 'Aprobado / Proyectado' : 'Proyectado estimado'}
+                      </span>
                       <span className="font-mono text-sm font-extrabold text-[#0F294A]">
-                        {formatCop(act.presupuesto)}
+                        {formatCop(actProjected)}
                       </span>
                     </div>
-                    <div>
-                      <span className="block text-[11px] text-slate-500">Ejecutado</span>
-                      <span className="font-mono text-sm font-bold text-[#D61F26]">
-                        {formatCop(act.presupuestoEjecutado)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-[11px] text-slate-500">Disponible</span>
-                      <span className="font-mono text-sm font-bold text-emerald-700">
-                        {formatCop(disponibleAct)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-[11px] text-slate-500">% Ejec.</span>
-                      <span className="font-mono text-sm font-extrabold text-[#0F294A]">
-                        {pctAct}%
-                      </span>
-                    </div>
+                    {isApproved && (
+                      <>
+                        <div>
+                          <span className="block text-[11px] text-slate-500">Ejecutado real</span>
+                          <span className="font-mono text-sm font-bold text-[#D61F26]">
+                            {formatCop(actExecuted)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="block text-[11px] text-slate-500">Disponible</span>
+                          <span className="font-mono text-sm font-bold text-emerald-700">
+                            {formatCop(actAvailable)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="block text-[11px] text-slate-500">% Ejec.</span>
+                          <span className="font-mono text-sm font-extrabold text-[#0F294A]">
+                            {pctAct}%
+                          </span>
+                        </div>
+                      </>
+                    )}
                     <div className="rounded-lg border border-slate-200 p-1.5 text-[#0F294A]">
                       {isOpen ? (
                         <ChevronUp className="h-4 w-4" />
@@ -512,11 +606,10 @@ export function Presupuesto2027View() {
                   </div>
                 </button>
 
-                {/* Desglose de recursos/materiales de la actividad */}
                 {isOpen && (
                   <div className="border-t border-slate-100 bg-[#F8FAFC] px-6 py-5 space-y-4">
                     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-                      <table className="w-full min-w-[820px] border-collapse text-xs">
+                      <table className="w-full min-w-[780px] border-collapse text-xs">
                         <thead>
                           <tr className="bg-[#0F294A] text-white">
                             <th className="border border-slate-300 px-3 py-2 text-left">
@@ -532,14 +625,16 @@ export function Presupuesto2027View() {
                               Valor unitario
                             </th>
                             <th className="border border-slate-300 px-3 py-2 text-right w-28">
-                              Valor total
+                              Total proyectado
                             </th>
                             <th className="border border-slate-300 px-3 py-2 text-left w-44">
                               Frecuencia de compra
                             </th>
-                            <th className="border border-slate-300 px-2 py-2 text-right w-28">
-                              Ejecutado (COP)
-                            </th>
+                            {isApproved && (
+                              <th className="border border-slate-300 px-2 py-2 text-right w-28">
+                                Ejecutado real
+                              </th>
+                            )}
                             <th className="border border-slate-300 px-2 py-2 text-center w-14">
                               Quitar
                             </th>
@@ -610,25 +705,27 @@ export function Presupuesto2027View() {
                                     className="w-full rounded border border-transparent px-1.5 py-1 text-xs text-slate-600 hover:border-slate-300"
                                   />
                                 </td>
-                                <td className="border border-slate-200 px-2 py-2 text-right">
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    step={1000}
-                                    value={it.ejecutado}
-                                    onChange={(e) =>
-                                      handleItemChange(it, {
-                                        ejecutado: Math.max(0, Number(e.target.value) || 0),
-                                      })
-                                    }
-                                    className="w-24 rounded border border-slate-200 px-1.5 py-1 text-right font-mono font-semibold text-[#D61F26] tabular-nums"
-                                  />
-                                </td>
+                                {isApproved && (
+                                  <td className="border border-slate-200 px-2 py-2 text-right">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      step={1000}
+                                      value={it.ejecutado}
+                                      onChange={(e) =>
+                                        handleItemChange(it, {
+                                          ejecutado: Math.max(0, Number(e.target.value) || 0),
+                                        })
+                                      }
+                                      className="w-24 rounded border border-slate-200 px-1.5 py-1 text-right font-mono font-semibold text-[#D61F26] tabular-nums"
+                                    />
+                                  </td>
+                                )}
                                 <td className="border border-slate-200 px-2 py-2 text-center">
                                   <button
                                     type="button"
-                                    onClick={() => deletePresupuestoCostoItem(it.id)}
-                                    className="rounded p-1 text-slate-400 hover:bg-[#FEE2E2] hover:text-[#D61F26]"
+                                    onClick={() => setPendingDeleteItem(it)}
+                                    className="rounded p-1 text-slate-400 hover:bg-[#FEE2E2] hover:text-[#D61F26] cursor-pointer"
                                     aria-label="Eliminar recurso"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
@@ -641,7 +738,6 @@ export function Presupuesto2027View() {
                       </table>
                     </div>
 
-                    {/* Botón o formulario rápido para agregar recurso a esta actividad */}
                     {addingForActId === act.id ? (
                       <form
                         onSubmit={(e) => handleAddItemSubmit(e, act.id)}
@@ -665,7 +761,7 @@ export function Presupuesto2027View() {
                             type="number"
                             min={1}
                             required
-                            placeholder="Cantidad"
+                            placeholder="Cantidad *"
                             value={newItemDraft.cantidad}
                             onChange={(e) =>
                               setNewItemDraft({
@@ -678,7 +774,7 @@ export function Presupuesto2027View() {
                           <input
                             type="text"
                             required
-                            placeholder="Unidad (ej. Unidad)"
+                            placeholder="Unidad (ej. Unidad) *"
                             value={newItemDraft.unidadMedida}
                             onChange={(e) =>
                               setNewItemDraft({ ...newItemDraft, unidadMedida: e.target.value })
@@ -689,7 +785,7 @@ export function Presupuesto2027View() {
                             type="number"
                             min={0}
                             required
-                            placeholder="Valor unitario COP"
+                            placeholder="Valor unitario COP *"
                             value={newItemDraft.valorUnitario}
                             onChange={(e) =>
                               setNewItemDraft({
@@ -702,7 +798,7 @@ export function Presupuesto2027View() {
                           <input
                             type="text"
                             required
-                            placeholder="Frecuencia de compra"
+                            placeholder="Frecuencia de compra *"
                             value={newItemDraft.frecuenciaCompra}
                             onChange={(e) =>
                               setNewItemDraft({
@@ -715,20 +811,20 @@ export function Presupuesto2027View() {
                         </div>
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-xs font-bold text-[#0F294A] tabular-nums">
-                            Total calculado:{' '}
+                            Total proyectado:{' '}
                             {formatCop(newItemDraft.cantidad * newItemDraft.valorUnitario)}
                           </span>
                           <div className="flex gap-2">
                             <button
                               type="button"
                               onClick={() => setAddingForActId(null)}
-                              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-[#0F294A]"
+                              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-[#0F294A] cursor-pointer"
                             >
                               Cancelar
                             </button>
                             <button
                               type="submit"
-                              className="inline-flex items-center gap-1 rounded-lg bg-[#D61F26] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#B3161C]"
+                              className="inline-flex items-center gap-1 rounded-lg bg-[#D61F26] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#B3161C] cursor-pointer"
                             >
                               <Check className="h-3.5 w-3.5" />
                               Agregar recurso
@@ -759,14 +855,141 @@ export function Presupuesto2027View() {
         <div className="border-t-2 border-[#FACC15] bg-[#0F294A] px-6 py-4 text-white flex flex-wrap items-center justify-between gap-4 text-xs">
           <div>
             <span className="font-extrabold text-[#FACC15]">RESUMEN PRESUPUESTAL 2027:</span>{' '}
-            Subtotal 9 actividades: <strong>{formatCop(totals.subtotalActividades)}</strong> +
-            Reserva para imprevistos: <strong>{formatCop(totals.reservaAsignada)}</strong>
+            Estado actual: <strong>{budget.estadoAprobacion}</strong> · 9 actividades consolidadas
           </div>
           <div className="font-display text-base font-extrabold text-[#FACC15] tabular-nums">
-            TOTAL GENERAL ASIGNADO: {formatCop(totals.totalAsignadoMasReserva)}
+            {isApproved
+              ? `APROBADO: ${formatCop(totals.aprobadoGerencia)} · EJECUTADO: ${formatCop(totals.ejecutadoReal)}`
+              : `VALOR PROYECTADO TOTAL: ${formatCop(totals.projectedTotal)}`}
           </div>
         </div>
       </section>
+
+      {/* Modal de Revisión y Aprobación por Gerencia */}
+      {reviewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 backdrop-blur-[1px]">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#D61F26]">
+                  AUTORIZACIÓN FORMAL · GERENCIA FRIKAZ S.A.S.
+                </p>
+                <h3 className="font-display text-lg font-extrabold text-[#0F294A]">
+                  Revisión del Presupuesto General 2027
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReviewOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:text-[#D61F26] cursor-pointer"
+                aria-label="Cerrar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-[#FDE047] bg-[#FFFBEB] p-3.5 text-xs text-[#0F294A] space-y-1">
+              <p>
+                <strong>Total proyectado a revisar:</strong>{' '}
+                <span className="font-mono font-extrabold">
+                  {formatCop(totals.projectedTotal)} COP
+                </span>
+              </p>
+              <p className="text-slate-600">
+                Al aprobar, este monto quedará fijado como Presupuesto Oficial Aprobado 2027 y se
+                habilitará el registro de dinero ejecutado real.
+              </p>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="mb-1 block font-bold text-[#0F294A]">
+                  Nombre completo de la Gerente *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. María Fernanda Gómez · Gerente General"
+                  value={gerenteNombre}
+                  onChange={(e) => setGerenteNombre(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-[#0F294A]"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block font-bold text-[#0F294A]">
+                  PIN de autorización de Gerencia *
+                </label>
+                <input
+                  type="password"
+                  placeholder="Ingresa el PIN institucional (2027)"
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block font-bold text-[#0F294A]">
+                  Observaciones de Gerencia (obligatorio si solicita ajustes)
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Comentarios de aprobación o detalle de ajustes solicitados..."
+                  value={observacionesGerencia}
+                  onChange={(e) => setObservacionesGerencia(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            {reviewError && (
+              <p role="alert" className="rounded-lg bg-[#FEF2F2] px-3 py-2 text-xs font-bold text-[#D61F26]">
+                {reviewError}
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setReviewOpen(false)}
+                className="rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-bold text-[#0F294A] cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleGerenciaSubmit('En ajuste')}
+                className="rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-3.5 py-2 text-xs font-bold text-[#D61F26] hover:bg-[#FEE2E2] cursor-pointer"
+              >
+                Solicitar ajustes
+              </button>
+              <button
+                type="button"
+                onClick={() => handleGerenciaSubmit('Aprobado por Gerencia')}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#0F294A] border-b-2 border-[#FACC15] px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 cursor-pointer"
+              >
+                <Check className="h-4 w-4 text-[#FACC15]" />
+                Aprobar Presupuesto 2027
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmación antes de eliminar un ítem del presupuesto */}
+      <ConfirmModal
+        open={Boolean(pendingDeleteItem)}
+        title="¿Eliminar recurso del presupuesto?"
+        description={`Se eliminará "${pendingDeleteItem?.recursoMaterial}" del desglose proyectado y el cambio quedará registrado en el historial de auditoría.`}
+        confirmLabel="Sí, eliminar recurso"
+        onCancel={() => setPendingDeleteItem(null)}
+        onConfirm={() => {
+          if (pendingDeleteItem) {
+            deletePresupuestoCostoItem(pendingDeleteItem.id);
+            setPendingDeleteItem(null);
+          }
+        }}
+      />
     </div>
   );
 }

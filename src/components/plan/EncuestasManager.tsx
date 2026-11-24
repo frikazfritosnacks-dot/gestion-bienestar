@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
@@ -39,6 +39,41 @@ const INITIAL_RATINGS: Record<CriterioEncuestaKey, number> = {
   satisfaccionGeneral: 0,
 };
 
+const DRAFT_STORAGE_KEY = 'frikaz_draft_encuesta_v1';
+
+interface EncuestaDraft {
+  selectedActId: string;
+  nombreParticipante: string;
+  areaCargo: string;
+  fechaRealizacion: string;
+  calificaciones: Record<CriterioEncuestaKey, number>;
+  loQueMasGusto: string;
+  aspectosMejorar: string;
+  otrasActividades: string;
+  observaciones: string;
+}
+
+function loadEncuestaDraft(fallbackActId: string): EncuestaDraft | null {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<EncuestaDraft>;
+    return {
+      selectedActId: parsed.selectedActId || fallbackActId,
+      nombreParticipante: parsed.nombreParticipante || '',
+      areaCargo: parsed.areaCargo || '',
+      fechaRealizacion: parsed.fechaRealizacion || '',
+      calificaciones: { ...INITIAL_RATINGS, ...(parsed.calificaciones || {}) },
+      loQueMasGusto: parsed.loQueMasGusto || '',
+      aspectosMejorar: parsed.aspectosMejorar || '',
+      otrasActividades: parsed.otrasActividades || '',
+      observaciones: parsed.observaciones || '',
+    };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Formulario de aplicación de encuestas de satisfacción por actividad.
  * Al enviar la encuesta, las respuestas se guardan automáticamente como un registro
@@ -49,21 +84,73 @@ export function EncuestasManager({
   onGoToRegistro,
 }: EncuestasManagerProps) {
   const { state, addRespuestaEncuesta, notify } = useBienestar();
-  const [selectedActId, setSelectedActId] = useState<string>(
+  const initialDraft = loadEncuestaDraft(
     initialActividadId || ENCUESTAS_POR_ACTIVIDAD[0].actividadId
   );
-  const [exportingBlank, setExportingBlank] = useState(false);
 
-  const [nombreParticipante, setNombreParticipante] = useState('');
-  const [areaCargo, setAreaCargo] = useState('');
-  const [fechaRealizacion, setFechaRealizacion] = useState('');
-  const [calificaciones, setCalificaciones] =
-    useState<Record<CriterioEncuestaKey, number>>(INITIAL_RATINGS);
-  const [loQueMasGusto, setLoQueMasGusto] = useState('');
-  const [aspectosMejorar, setAspectosMejorar] = useState('');
-  const [otrasActividades, setOtrasActividades] = useState('');
-  const [observaciones, setObservaciones] = useState('');
+  const [selectedActId, setSelectedActId] = useState<string>(
+    initialActividadId || initialDraft?.selectedActId || ENCUESTAS_POR_ACTIVIDAD[0].actividadId
+  );
+  const [exportingBlank, setExportingBlank] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [nombreParticipante, setNombreParticipante] = useState(
+    initialDraft?.nombreParticipante || ''
+  );
+  const [areaCargo, setAreaCargo] = useState(initialDraft?.areaCargo || '');
+  const [fechaRealizacion, setFechaRealizacion] = useState(
+    initialDraft?.fechaRealizacion || ''
+  );
+  const [calificaciones, setCalificaciones] = useState<Record<CriterioEncuestaKey, number>>(
+    initialDraft?.calificaciones || INITIAL_RATINGS
+  );
+  const [loQueMasGusto, setLoQueMasGusto] = useState(initialDraft?.loQueMasGusto || '');
+  const [aspectosMejorar, setAspectosMejorar] = useState(initialDraft?.aspectosMejorar || '');
+  const [otrasActividades, setOtrasActividades] = useState(initialDraft?.otrasActividades || '');
+  const [observaciones, setObservaciones] = useState(initialDraft?.observaciones || '');
   const [lastSavedNumber, setLastSavedNumber] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const hasAnyValue =
+        nombreParticipante ||
+        areaCargo ||
+        fechaRealizacion ||
+        loQueMasGusto ||
+        aspectosMejorar ||
+        otrasActividades ||
+        observaciones ||
+        Object.values(calificaciones).some((v) => v > 0);
+      if (!hasAnyValue) {
+        sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+        return;
+      }
+      const draft: EncuestaDraft = {
+        selectedActId,
+        nombreParticipante,
+        areaCargo,
+        fechaRealizacion,
+        calificaciones,
+        loQueMasGusto,
+        aspectosMejorar,
+        otrasActividades,
+        observaciones,
+      };
+      sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      // Ignorar si sessionStorage no está disponible
+    }
+  }, [
+    selectedActId,
+    nombreParticipante,
+    areaCargo,
+    fechaRealizacion,
+    calificaciones,
+    loQueMasGusto,
+    aspectosMejorar,
+    otrasActividades,
+    observaciones,
+  ]);
 
   const currentConfig =
     ENCUESTAS_POR_ACTIVIDAD.find((c) => c.actividadId === selectedActId) ||
@@ -71,6 +158,7 @@ export function EncuestasManager({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     const missingCriterion = currentConfig.preguntas.find(
       (q) => !calificaciones[q.key] || calificaciones[q.key] < 1
     );
@@ -82,30 +170,40 @@ export function EncuestasManager({
       return;
     }
 
-    const res = addRespuestaEncuesta({
-      actividadId: currentConfig.actividadId,
-      actividadNombre: currentConfig.actividadNombre,
-      dimension: currentConfig.dimension,
-      nombreParticipante: nombreParticipante.trim() || undefined,
-      areaCargo: areaCargo.trim() || undefined,
-      fechaRealizacion,
-      calificaciones,
-      loQueMasGusto: loQueMasGusto.trim(),
-      aspectosMejorar: aspectosMejorar.trim(),
-      otrasActividades: otrasActividades.trim(),
-      observaciones: observaciones.trim(),
-    });
+    setSubmitting(true);
+    try {
+      const res = addRespuestaEncuesta({
+        actividadId: currentConfig.actividadId,
+        actividadNombre: currentConfig.actividadNombre,
+        dimension: currentConfig.dimension,
+        nombreParticipante: nombreParticipante.trim() || undefined,
+        areaCargo: areaCargo.trim() || undefined,
+        fechaRealizacion,
+        calificaciones,
+        loQueMasGusto: loQueMasGusto.trim(),
+        aspectosMejorar: aspectosMejorar.trim(),
+        otrasActividades: otrasActividades.trim(),
+        observaciones: observaciones.trim(),
+      });
 
-    if (res.ok && res.record) {
-      setLastSavedNumber(res.record.numeroRegistro || state.respuestasEncuestas.length + 1);
-      setNombreParticipante('');
-      setAreaCargo('');
-      setFechaRealizacion('');
-      setCalificaciones(INITIAL_RATINGS);
-      setLoQueMasGusto('');
-      setAspectosMejorar('');
-      setOtrasActividades('');
-      setObservaciones('');
+      if (res.ok && res.record) {
+        try {
+          sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+        } catch {
+          // ignore
+        }
+        setLastSavedNumber(res.record.numeroRegistro || state.respuestasEncuestas.length + 1);
+        setNombreParticipante('');
+        setAreaCargo('');
+        setFechaRealizacion('');
+        setCalificaciones(INITIAL_RATINGS);
+        setLoQueMasGusto('');
+        setAspectosMejorar('');
+        setOtrasActividades('');
+        setObservaciones('');
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -116,6 +214,8 @@ export function EncuestasManager({
       const wb = await buildEncuestaSatisfaccionWorkbook(state);
       await downloadWorkbookAsExcel(wb, 'Encuesta_Satisfaccion_En_Blanco_Frikaz_2027.xlsx');
       notify('Plantilla en blanco de encuestas descargada en Excel (.xlsx).');
+    } catch {
+      notify('No fue posible generar la plantilla en Excel. Inténtalo de nuevo.', 'warning');
     } finally {
       setExportingBlank(false);
     }
@@ -391,10 +491,11 @@ export function EncuestasManager({
         <div className="flex justify-end">
           <button
             type="submit"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#D61F26] border-b-2 border-[#FACC15] px-6 py-3 text-sm font-extrabold text-white hover:bg-[#B3161C] cursor-pointer"
+            disabled={submitting}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#D61F26] border-b-2 border-[#FACC15] px-6 py-3 text-sm font-extrabold text-white hover:bg-[#B3161C] disabled:opacity-60 cursor-pointer"
           >
             <Send className="h-4 w-4 text-[#FACC15]" />
-            Enviar encuesta y guardar en registro
+            {submitting ? 'Guardando respuesta...' : 'Enviar encuesta y guardar en registro'}
           </button>
         </div>
       </form>

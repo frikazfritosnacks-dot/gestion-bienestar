@@ -15,13 +15,16 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { BienestarProvider, useBienestar } from './context/BienestarContext';
-import { ManualSubSectionId, SectionId } from './types/bienestar';
+import { DimensionBienestar, ManualSubSectionId, SectionId } from './types/bienestar';
 import { CoverPortada } from './components/sections/CoverPortada';
 import { InicioSection } from './components/sections/InicioSection';
 import { ManualSection } from './components/sections/ManualSection';
 import { MatrizDetalladaSection } from './components/sections/MatrizDetalladaSection';
 import { FlujogramaSection } from './components/sections/FlujogramaSection';
-import { ProgramasBienestarSection } from './components/sections/ProgramasBienestarSection';
+import {
+  PlanSubTab,
+  ProgramasBienestarSection,
+} from './components/sections/ProgramasBienestarSection';
 import { ChipButtonBurstOverlay } from './components/ui/ChipButtonBurstOverlay';
 import {
   WalkingPiggyCompanion,
@@ -54,10 +57,13 @@ const SECTION_TITLES: Record<SectionId, string> = {
 };
 
 function AppShell() {
-  const { state, toasts, dismissToast } = useBienestar();
+  const { state, isSaving, toasts, dismissToast } = useBienestar();
   const [showCover, setShowCover] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionId>('inicio');
   const [manualSubTab, setManualSubTab] = useState<ManualSubSectionId>('introduccion');
+  const [programasSubTab, setProgramasSubTab] = useState<PlanSubTab>('general');
+  const [programasDimension, setProgramasDimension] = useState<'ALL' | DimensionBienestar>('ALL');
+  const [programasActividadId, setProgramasActividadId] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleNavigate = (section: SectionId, tab?: ManualSubSectionId) => {
@@ -72,10 +78,9 @@ function AppShell() {
     tab?: ManualSubSectionId
   ) => {
     setMobileMenuOpen(false);
-    requestPiggyWalkAndNavigate(e.currentTarget, () => {
-      setActiveSection(section);
-      if (tab) setManualSubTab(tab);
-    });
+    setActiveSection(section);
+    if (tab) setManualSubTab(tab);
+    requestPiggyWalkAndNavigate(e.currentTarget);
   };
 
   return (
@@ -174,8 +179,18 @@ function AppShell() {
                   })}
                 </nav>
 
-                {/* Botón de portada y menú móvil */}
+                {/* Botón de portada, estado de guardado y menú móvil */}
                 <div className="flex items-center gap-2 shrink-0">
+                  {isSaving && (
+                    <span
+                      aria-live="polite"
+                      className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#D61F26] animate-pulse" />
+                      Guardando...
+                    </span>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setShowCover(true)}
@@ -292,7 +307,16 @@ function AppShell() {
                     <FlujogramaSection onOpenMatriz={() => handleNavigate('matriz')} />
                   )}
 
-                  {activeSection === 'programas' && <ProgramasBienestarSection />}
+                  {activeSection === 'programas' && (
+                    <ProgramasBienestarSection
+                      activeSubTab={programasSubTab}
+                      onChangeSubTab={setProgramasSubTab}
+                      selectedDimensionProp={programasDimension}
+                      onChangeDimensionProp={setProgramasDimension}
+                      selectedActividadIdProp={programasActividadId}
+                      onChangeActividadIdProp={setProgramasActividadId}
+                    />
+                  )}
                 </motion.div>
               </AnimatePresence>
             </main>
@@ -326,6 +350,7 @@ function AppShell() {
                     </div>
                     <button
                       type="button"
+                      data-piggy-ignore="true"
                       onClick={() => dismissToast(t.id)}
                       className="rounded p-0.5 opacity-60 hover:opacity-100"
                       aria-label="Cerrar aviso"

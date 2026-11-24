@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import {
   BienestarState,
   ConvenioItem,
@@ -9,6 +9,7 @@ import {
   PlanGeneralInfo,
   PresupuestoCostoItem,
   PresupuestoGeneral2027,
+  PresupuestoHistorialItem,
   ProcessStep,
   ProgramaBienestar,
   RegistroSeguimiento,
@@ -50,6 +51,7 @@ interface ToastMessage {
 
 interface BienestarContextValue {
   state: BienestarState;
+  isSaving: boolean;
   toasts: ToastMessage[];
   dismissToast: (id: string) => void;
   notify: (text: string, tone?: ToastMessage['tone']) => void;
@@ -86,17 +88,24 @@ interface BienestarContextValue {
       Pick<
         PresupuestoGeneral2027,
         | 'presupuestoTotalAprobado'
-        | 'reservaImprevistos'
-        | 'reservaAutorizada'
-        | 'reservaEjecutada'
-        | 'reservaMotivoAutorizacion'
         | 'poblacionTrabajadores'
       >
     >
   ) => void;
-  addPresupuestoCostoItem: (item: Omit<PresupuestoCostoItem, 'id'>) => void;
-  updatePresupuestoCostoItem: (item: PresupuestoCostoItem) => void;
-  deletePresupuestoCostoItem: (id: string) => void;
+  addPresupuestoCostoItem: (
+    item: Omit<PresupuestoCostoItem, 'id'>,
+    usuario?: string
+  ) => { ok: boolean; error?: string };
+  updatePresupuestoCostoItem: (
+    item: PresupuestoCostoItem,
+    usuario?: string
+  ) => { ok: boolean; error?: string };
+  deletePresupuestoCostoItem: (id: string, usuario?: string) => void;
+  reviewPresupuestoGerencia: (payload: {
+    decision: 'Aprobado por Gerencia' | 'En ajuste';
+    gerenteNombre: string;
+    observaciones?: string;
+  }) => { ok: boolean; error?: string };
   // Encuestas de Satisfacción (registro independiente persistente)
   addRespuestaEncuesta: (
     resp: Omit<RespuestaEncuesta, 'id' | 'numeroRegistro' | 'fechaHoraRegistro' | 'calificacionGeneral'>
@@ -163,13 +172,47 @@ function loadInitialState(): BienestarState {
       };
     }
 
-    // Migrar caché anterior de 2026 al Plan Anual 2027 (10 trabajadores, presupuesto $2.150.000, cronograma ene-dic 2027)
-    // manteniendo intactos Manual, Normograma, Terminología, Matriz y Flujograma
+    // Migrar caché anterior al esquema limpio 2027 (sin reserva ficticia de $200.000 ni aprobación/ejecución previa sin firma de Gerencia)
     const cachedPlan = Array.isArray(parsed.planBienestar) ? parsed.planBienestar : [];
     const hasPlan2027 =
       Boolean(parsed.presupuestoGeneral2027?.items?.length) &&
       parsed.planGeneral?.vigenciaAnual === '2027' &&
       cachedPlan.some((p) => p.id === 'act-1' && p.fechaInicio?.startsWith('2027'));
+
+    const rawBudget = hasPlan2027 ? parsed.presupuestoGeneral2027 : undefined;
+    const isExplicitlyApprovedByGerencia =
+      rawBudget?.estadoAprobacion === 'Aprobado por Gerencia' &&
+      Boolean(rawBudget?.gerenteAprobador?.trim());
+
+    const migratedBudget: PresupuestoGeneral2027 = rawBudget
+      ? {
+          ...INITIAL_BIENESTAR_STATE.presupuestoGeneral2027,
+          ...rawBudget,
+          estadoAprobacion: isExplicitlyApprovedByGerencia
+            ? 'Aprobado por Gerencia'
+            : rawBudget.estadoAprobacion === 'En ajuste'
+              ? 'En ajuste'
+              : 'Propuesta pendiente de aprobación',
+          presupuestoTotalAprobado: isExplicitlyApprovedByGerencia
+            ? rawBudget.presupuestoTotalAprobado ||
+              rawBudget.items.reduce(
+                (acc, it) => acc + Math.max(0, it.cantidad) * Math.max(0, it.valorUnitario),
+                0
+              )
+            : 0,
+          reservaImprevistos: 0,
+          reservaAutorizada: false,
+          reservaEjecutada: 0,
+          reservaMotivoAutorizacion: '',
+          items: rawBudget.items.map((it) => ({
+            ...it,
+            ejecutado: isExplicitlyApprovedByGerencia ? Math.max(0, it.ejecutado || 0) : 0,
+          })),
+          historialModificaciones: Array.isArray(rawBudget.historialModificaciones)
+            ? rawBudget.historialModificaciones
+            : [],
+        }
+      : INITIAL_BIENESTAR_STATE.presupuestoGeneral2027;
 
     let finalPlan: ProgramaBienestar[];
     if (hasPlan2027) {
@@ -183,12 +226,33 @@ function loadInitialState(): BienestarState {
         mergedMap.set(item.id, {
           ...(base || ({} as ProgramaBienestar)),
           ...item,
+          estadoAprobacion: isExplicitlyApprovedByGerencia
+            ? 'Aprobado'
+            : migratedBudget.estadoAprobacion === 'En ajuste'
+              ? 'En ajuste'
+              : 'Pendiente de aprobación',
+          presupuestoEjecutado: isExplicitlyApprovedByGerencia
+            ? Math.max(0, item.presupuestoEjecutado || 0)
+            : 0,
+          presupuestoEstado: isExplicitlyApprovedByGerencia
+            ? item.presupuestoEstado
+            : 'Propuesta pendiente de aprobación',
         });
       }
       finalPlan = Array.from(mergedMap.values());
     } else {
       finalPlan = INITIAL_BIENESTAR_STATE.planBienestar;
     }
+
+    const cleanSeguimiento = Array.isArray(parsed.seguimiento)
+      ? parsed.seguimiento.filter(
+          (s) =>
+            !(
+              (s.id === 'seg-1' || s.id === 'seg-2') &&
+              (s.convocados === 48 || s.fecha?.startsWith('2026'))
+            )
+        )
+      : [];
 
     const merged: BienestarState = {
       ...INITIAL_BIENESTAR_STATE,
@@ -211,10 +275,8 @@ function loadInitialState(): BienestarState {
         ? parsed.planGeneral
         : INITIAL_BIENESTAR_STATE.planGeneral,
       planBienestar: finalPlan,
-      presupuestoGeneral2027:
-        hasPlan2027 && parsed.presupuestoGeneral2027
-          ? parsed.presupuestoGeneral2027
-          : INITIAL_BIENESTAR_STATE.presupuestoGeneral2027,
+      presupuestoGeneral2027: migratedBudget,
+      seguimiento: cleanSeguimiento,
       respuestasEncuestas: Array.isArray(parsed.respuestasEncuestas)
         ? parsed.respuestasEncuestas
             .filter(
@@ -280,6 +342,7 @@ function loadInitialState(): BienestarState {
 
 export function BienestarProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<BienestarState>(loadInitialState);
+  const [isSaving, setIsSaving] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const dismissToast = useCallback((id: string) => {
@@ -319,14 +382,71 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  useEffect(() => {
+  const latestStateRef = useRef<BienestarState>(state);
+  latestStateRef.current = state;
+  const saveTimerRef = useRef<number | null>(null);
+  const isFirstRenderRef = useRef(true);
+  const lastBudgetToastRef = useRef<{ itemId: string; at: number }>({ itemId: '', at: 0 });
+  const lastBudgetHistoryRef = useRef<{ itemId: string; historyId: string; at: number }>({
+    itemId: '',
+    historyId: '',
+    at: 0,
+  });
+
+  const flushPersistence = useCallback((snapshot: BienestarState) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
     } catch {
       // Storage quota fallback silently ignored if full
     }
-    void persistStateToIndexedDB(state);
-  }, [state]);
+    void persistStateToIndexedDB(snapshot).finally(() => {
+      setIsSaving(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      flushPersistence(state);
+      return;
+    }
+    setIsSaving(true);
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = window.setTimeout(() => {
+      saveTimerRef.current = null;
+      flushPersistence(latestStateRef.current);
+    }, 280);
+
+    return () => {
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+    };
+  }, [state, flushPersistence]);
+
+  useEffect(() => {
+    const handleFlushOnExit = () => {
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(latestStateRef.current));
+      } catch {
+        // Ignore quota errors on exit
+      }
+    };
+    window.addEventListener('beforeunload', handleFlushOnExit);
+    window.addEventListener('pagehide', handleFlushOnExit);
+    return () => {
+      window.removeEventListener('beforeunload', handleFlushOnExit);
+      window.removeEventListener('pagehide', handleFlushOnExit);
+      handleFlushOnExit();
+    };
+  }, []);
 
   const touch = (prev: BienestarState, partial: Partial<BienestarState>): BienestarState => ({
     ...prev,
@@ -395,6 +515,15 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addNorma = (norma: Omit<NormaItem, 'id'>) => {
+    const cleanName = norma.nombre.trim().toLowerCase();
+    if (!cleanName) {
+      notify('El nombre de la norma es obligatorio.', 'warning');
+      return;
+    }
+    if (state.normograma.some((n) => n.nombre.trim().toLowerCase() === cleanName)) {
+      notify('Ya existe una disposición con ese mismo nombre en el Normograma.', 'warning');
+      return;
+    }
     const id = `norm-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
     setState((prev) =>
       touch(prev, {
@@ -423,6 +552,15 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addTermino = (termino: Omit<TerminoItem, 'id'>) => {
+    const cleanTerm = termino.termino.trim().toLowerCase();
+    if (!cleanTerm) {
+      notify('El nombre del término es obligatorio.', 'warning');
+      return;
+    }
+    if (state.terminologia.some((t) => t.termino.trim().toLowerCase() === cleanTerm)) {
+      notify('Ese término ya existe en el diccionario institucional.', 'warning');
+      return;
+    }
     const id = `term-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
     setState((prev) =>
       touch(prev, {
@@ -564,7 +702,8 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
 
   const syncActivitiesFromBudgetItems = (
     plan: ProgramaBienestar[],
-    items: PresupuestoCostoItem[]
+    items: PresupuestoCostoItem[],
+    isApproved: boolean
   ): ProgramaBienestar[] =>
     plan.map((act) => {
       const actItems = items.filter((it) => it.actividadId === act.id);
@@ -573,7 +712,9 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
         (acc, it) => acc + Math.max(0, it.cantidad) * Math.max(0, it.valorUnitario),
         0
       );
-      const nextEjecutado = actItems.reduce((acc, it) => acc + Math.max(0, it.ejecutado), 0);
+      const nextEjecutado = isApproved
+        ? actItems.reduce((acc, it) => acc + Math.max(0, it.ejecutado), 0)
+        : 0;
       return {
         ...act,
         presupuesto: nextPresupuesto,
@@ -581,73 +722,307 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
       };
     });
 
+  const calcProjectedBudgetTotal = (items: PresupuestoCostoItem[]) =>
+    items.reduce((acc, it) => acc + Math.max(0, it.cantidad) * Math.max(0, it.valorUnitario), 0);
+
+  const buildAuditEntry = (
+    tipo: PresupuestoHistorialItem['tipo'],
+    descripcion: string,
+    valorAnterior: number,
+    valorNuevo: number,
+    usuario = 'Talento Humano'
+  ): PresupuestoHistorialItem => ({
+    id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    fechaHora: new Date().toISOString(),
+    usuario,
+    tipo,
+    descripcion,
+    valorAnterior,
+    valorNuevo,
+  });
+
   const updatePresupuestoGeneralConfig = (
     patch: Partial<
       Pick<
         PresupuestoGeneral2027,
         | 'presupuestoTotalAprobado'
-        | 'reservaImprevistos'
-        | 'reservaAutorizada'
-        | 'reservaEjecutada'
-        | 'reservaMotivoAutorizacion'
         | 'poblacionTrabajadores'
       >
     >
   ) => {
-    setState((prev) =>
-      touch(prev, {
-        presupuestoGeneral2027: {
-          ...prev.presupuestoGeneral2027,
-          ...patch,
-        },
-      })
-    );
-    notify('Parámetros del Presupuesto General 2027 actualizados.');
-  };
-
-  const addPresupuestoCostoItem = (item: Omit<PresupuestoCostoItem, 'id'>) => {
-    const id = `cost-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
     setState((prev) => {
-      const nextItems = [...prev.presupuestoGeneral2027.items, { ...item, id }];
+      const prevTotal = calcProjectedBudgetTotal(prev.presupuestoGeneral2027.items);
+      const historyItem = buildAuditEntry(
+        'Edición',
+        `Actualización de parámetros generales (Población: ${patch.poblacionTrabajadores ?? prev.presupuestoGeneral2027.poblacionTrabajadores} trabajadores)`,
+        prevTotal,
+        prevTotal
+      );
       return touch(prev, {
         presupuestoGeneral2027: {
           ...prev.presupuestoGeneral2027,
-          items: nextItems,
+          ...patch,
+          reservaImprevistos: 0,
+          historialModificaciones: [
+            historyItem,
+            ...(prev.presupuestoGeneral2027.historialModificaciones || []),
+          ],
         },
-        planBienestar: syncActivitiesFromBudgetItems(prev.planBienestar, nextItems),
       });
     });
-    notify('Recurso agregado y presupuesto actualizado automáticamente.');
+    notify('Parámetros del Presupuesto General 2027 actualizados.');
   };
 
-  const updatePresupuestoCostoItem = (item: PresupuestoCostoItem) => {
+  const addPresupuestoCostoItem = (
+    item: Omit<PresupuestoCostoItem, 'id'>,
+    usuario = 'Talento Humano'
+  ): { ok: boolean; error?: string } => {
+    if (!item.recursoMaterial.trim() || item.cantidad <= 0 || item.valorUnitario < 0) {
+      const error = 'Ingresa descripción del recurso, cantidad mayor a cero y valor unitario válido.';
+      notify(error, 'warning');
+      return { ok: false, error };
+    }
+    const cleanName = item.recursoMaterial.trim().toLowerCase();
+    const isDuplicate = state.presupuestoGeneral2027.items.some(
+      (it) =>
+        it.actividadId === item.actividadId &&
+        it.recursoMaterial.trim().toLowerCase() === cleanName
+    );
+    if (isDuplicate) {
+      const error = 'Ya existe un recurso con el mismo nombre en esta actividad.';
+      notify(error, 'warning');
+      return { ok: false, error };
+    }
+
+    const id = `cost-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
     setState((prev) => {
-      const nextItems = prev.presupuestoGeneral2027.items.map((it) =>
-        it.id === item.id ? item : it
+      const isApproved = prev.presupuestoGeneral2027.estadoAprobacion === 'Aprobado por Gerencia';
+      const sanitizedItem: PresupuestoCostoItem = {
+        ...item,
+        id,
+        ejecutado: isApproved ? Math.max(0, item.ejecutado || 0) : 0,
+      };
+      const prevTotal = calcProjectedBudgetTotal(prev.presupuestoGeneral2027.items);
+      const nextItems = [...prev.presupuestoGeneral2027.items, sanitizedItem];
+      const nextTotal = calcProjectedBudgetTotal(nextItems);
+      const actName =
+        prev.planBienestar.find((a) => a.id === item.actividadId)?.actividad || item.actividadId;
+      const historyItem = buildAuditEntry(
+        'Creación',
+        `Nuevo recurso "${sanitizedItem.recursoMaterial}" en ${actName} (${sanitizedItem.cantidad} × $${sanitizedItem.valorUnitario.toLocaleString('es-CO')})`,
+        prevTotal,
+        nextTotal,
+        usuario
       );
       return touch(prev, {
         presupuestoGeneral2027: {
           ...prev.presupuestoGeneral2027,
           items: nextItems,
+          historialModificaciones: [
+            historyItem,
+            ...(prev.presupuestoGeneral2027.historialModificaciones || []),
+          ],
         },
-        planBienestar: syncActivitiesFromBudgetItems(prev.planBienestar, nextItems),
+        planBienestar: syncActivitiesFromBudgetItems(prev.planBienestar, nextItems, isApproved),
       });
     });
-    notify('Desglose de costo actualizado y sincronizado.');
+    notify('Recurso agregado y proyección presupuestal actualizada.');
+    return { ok: true };
   };
 
-  const deletePresupuestoCostoItem = (id: string) => {
+  const updatePresupuestoCostoItem = (
+    item: PresupuestoCostoItem,
+    usuario = 'Talento Humano'
+  ): { ok: boolean; error?: string } => {
+    if (!item.recursoMaterial.trim() || item.cantidad < 0 || item.valorUnitario < 0) {
+      const error = 'Los valores del recurso deben ser válidos y no negativos.';
+      notify(error, 'warning');
+      return { ok: false, error };
+    }
+    const isApproved = state.presupuestoGeneral2027.estadoAprobacion === 'Aprobado por Gerencia';
+    if (!isApproved && item.ejecutado > 0) {
+      const error =
+        'No se puede registrar dinero ejecutado hasta que Gerencia apruebe el Presupuesto General.';
+      notify(error, 'warning');
+      return { ok: false, error };
+    }
+
+    const nowMs = Date.now();
     setState((prev) => {
-      const nextItems = prev.presupuestoGeneral2027.items.filter((it) => it.id !== id);
+      const prevItem = prev.presupuestoGeneral2027.items.find((it) => it.id === item.id);
+      const sanitizedItem: PresupuestoCostoItem = {
+        ...item,
+        ejecutado: isApproved ? Math.max(0, item.ejecutado || 0) : 0,
+      };
+      const prevTotal = calcProjectedBudgetTotal(prev.presupuestoGeneral2027.items);
+      const nextItems = prev.presupuestoGeneral2027.items.map((it) =>
+        it.id === item.id ? sanitizedItem : it
+      );
+      const nextTotal = calcProjectedBudgetTotal(nextItems);
+      const actName =
+        prev.planBienestar.find((a) => a.id === item.actividadId)?.actividad || item.actividadId;
+      const isExecutionOnly =
+        prevItem &&
+        prevItem.cantidad === sanitizedItem.cantidad &&
+        prevItem.valorUnitario === sanitizedItem.valorUnitario &&
+        prevItem.ejecutado !== sanitizedItem.ejecutado;
+      const existingHistory = prev.presupuestoGeneral2027.historialModificaciones || [];
+      const canCoalesce =
+        lastBudgetHistoryRef.current.itemId === item.id &&
+        nowMs - lastBudgetHistoryRef.current.at <= 2000 &&
+        existingHistory[0]?.id === lastBudgetHistoryRef.current.historyId;
+
+      const nextHistory = (() => {
+        if (canCoalesce && existingHistory[0]) {
+          const updatedTop: PresupuestoHistorialItem = {
+            ...existingHistory[0],
+            fechaHora: new Date().toISOString(),
+            tipo: isExecutionOnly ? 'Ejecución' : 'Edición',
+            descripcion: isExecutionOnly
+              ? `Registro de ejecución real en "${sanitizedItem.recursoMaterial}" (${actName}): $${sanitizedItem.ejecutado.toLocaleString('es-CO')} COP`
+              : `Modificación de "${sanitizedItem.recursoMaterial}" en ${actName} (${sanitizedItem.cantidad} ${sanitizedItem.unidadMedida} × $${sanitizedItem.valorUnitario.toLocaleString('es-CO')})`,
+            valorNuevo: isExecutionOnly ? sanitizedItem.ejecutado : nextTotal,
+          };
+          lastBudgetHistoryRef.current = {
+            itemId: item.id,
+            historyId: updatedTop.id,
+            at: nowMs,
+          };
+          return [updatedTop, ...existingHistory.slice(1)];
+        }
+        const historyItem = buildAuditEntry(
+          isExecutionOnly ? 'Ejecución' : 'Edición',
+          isExecutionOnly
+            ? `Registro de ejecución real en "${sanitizedItem.recursoMaterial}" (${actName}): $${sanitizedItem.ejecutado.toLocaleString('es-CO')} COP`
+            : `Modificación de "${sanitizedItem.recursoMaterial}" en ${actName} (${sanitizedItem.cantidad} ${sanitizedItem.unidadMedida} × $${sanitizedItem.valorUnitario.toLocaleString('es-CO')})`,
+          isExecutionOnly ? prevItem?.ejecutado || 0 : prevTotal,
+          isExecutionOnly ? sanitizedItem.ejecutado : nextTotal,
+          usuario
+        );
+        lastBudgetHistoryRef.current = {
+          itemId: item.id,
+          historyId: historyItem.id,
+          at: nowMs,
+        };
+        return [historyItem, ...existingHistory];
+      })();
+
       return touch(prev, {
         presupuestoGeneral2027: {
           ...prev.presupuestoGeneral2027,
           items: nextItems,
+          historialModificaciones: nextHistory,
         },
-        planBienestar: syncActivitiesFromBudgetItems(prev.planBienestar, nextItems),
+        planBienestar: syncActivitiesFromBudgetItems(prev.planBienestar, nextItems, isApproved),
+      });
+    });
+    if (
+      lastBudgetToastRef.current.itemId !== item.id ||
+      nowMs - lastBudgetToastRef.current.at > 2000
+    ) {
+      lastBudgetToastRef.current = { itemId: item.id, at: nowMs };
+      notify('Desglose de costo actualizado y registrado en historial.');
+    }
+    return { ok: true };
+  };
+
+  const deletePresupuestoCostoItem = (id: string, usuario = 'Talento Humano') => {
+    setState((prev) => {
+      const isApproved = prev.presupuestoGeneral2027.estadoAprobacion === 'Aprobado por Gerencia';
+      const target = prev.presupuestoGeneral2027.items.find((it) => it.id === id);
+      const prevTotal = calcProjectedBudgetTotal(prev.presupuestoGeneral2027.items);
+      const nextItems = prev.presupuestoGeneral2027.items.filter((it) => it.id !== id);
+      const nextTotal = calcProjectedBudgetTotal(nextItems);
+      const actName =
+        prev.planBienestar.find((a) => a.id === target?.actividadId)?.actividad || '';
+      const historyItem = buildAuditEntry(
+        'Eliminación',
+        `Eliminación de "${target?.recursoMaterial || 'Ítem'}"${actName ? ` en ${actName}` : ''}`,
+        prevTotal,
+        nextTotal,
+        usuario
+      );
+      return touch(prev, {
+        presupuestoGeneral2027: {
+          ...prev.presupuestoGeneral2027,
+          items: nextItems,
+          historialModificaciones: [
+            historyItem,
+            ...(prev.presupuestoGeneral2027.historialModificaciones || []),
+          ],
+        },
+        planBienestar: syncActivitiesFromBudgetItems(prev.planBienestar, nextItems, isApproved),
       });
     });
     notify('Ítem de costo eliminado del desglose.', 'info');
+  };
+
+  const reviewPresupuestoGerencia = (payload: {
+    decision: 'Aprobado por Gerencia' | 'En ajuste';
+    gerenteNombre: string;
+    observaciones?: string;
+  }): { ok: boolean; error?: string } => {
+    if (!payload.gerenteNombre.trim()) {
+      const error = 'Ingresa el nombre de la Gerente que realiza la revisión.';
+      notify(error, 'warning');
+      return { ok: false, error };
+    }
+    if (payload.decision === 'En ajuste' && !payload.observaciones?.trim()) {
+      const error = 'Especifica las observaciones o ajustes requeridos para la propuesta.';
+      notify(error, 'warning');
+      return { ok: false, error };
+    }
+
+    setState((prev) => {
+      const projectedTotal = calcProjectedBudgetTotal(prev.presupuestoGeneral2027.items);
+      const isApproved = payload.decision === 'Aprobado por Gerencia';
+      const nowIso = new Date().toISOString();
+      const historyItem = buildAuditEntry(
+        isApproved ? 'Aprobación' : 'Ajuste',
+        isApproved
+          ? `Aprobación formal del Presupuesto General 2027 por Gerencia (${payload.gerenteNombre.trim()}).${payload.observaciones?.trim() ? ` Obs: ${payload.observaciones.trim()}` : ''}`
+          : `Gerencia (${payload.gerenteNombre.trim()}) solicitó ajustes a la propuesta: ${payload.observaciones?.trim()}`,
+        prev.presupuestoGeneral2027.presupuestoTotalAprobado,
+        isApproved ? projectedTotal : 0,
+        payload.gerenteNombre.trim()
+      );
+      const nextItems = isApproved
+        ? prev.presupuestoGeneral2027.items
+        : prev.presupuestoGeneral2027.items.map((it) => ({ ...it, ejecutado: 0 }));
+
+      return touch(prev, {
+        presupuestoGeneral2027: {
+          ...prev.presupuestoGeneral2027,
+          estadoAprobacion: payload.decision,
+          presupuestoTotalAprobado: isApproved ? projectedTotal : 0,
+          gerenteAprobador: payload.gerenteNombre.trim(),
+          fechaAprobacion: nowIso,
+          observacionesGerencia: payload.observaciones?.trim() || '',
+          reservaImprevistos: 0,
+          items: nextItems,
+          historialModificaciones: [
+            historyItem,
+            ...(prev.presupuestoGeneral2027.historialModificaciones || []),
+          ],
+        },
+        planBienestar: prev.planBienestar.map((act) => ({
+          ...act,
+          estadoAprobacion: isApproved ? 'Aprobado' : 'En ajuste',
+          presupuestoEstado: isApproved
+            ? 'Aprobado por Gerencia'
+            : 'En ajuste según revisión de Gerencia',
+          presupuestoEjecutado: isApproved ? act.presupuestoEjecutado : 0,
+        })),
+      });
+    });
+
+    notify(
+      payload.decision === 'Aprobado por Gerencia'
+        ? 'Presupuesto General 2027 aprobado formalmente por Gerencia.'
+        : 'Solicitud de ajuste registrada por Gerencia.',
+      payload.decision === 'Aprobado por Gerencia' ? 'success' : 'info'
+    );
+    return { ok: true };
   };
 
   const addRespuestaEncuesta = (
@@ -757,6 +1132,11 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
       notify(error, 'warning');
       return { ok: false, error };
     }
+    if (lista.horaFin <= lista.horaInicio) {
+      const error = 'La hora de finalización debe ser posterior a la hora de inicio.';
+      notify(error, 'warning');
+      return { ok: false, error };
+    }
     if (lista.participantes.length === 0) {
       const error = 'Agrega al menos un participante antes de guardar la lista de asistencia.';
       notify(error, 'warning');
@@ -831,6 +1211,15 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addConvenio = (conv: Omit<ConvenioItem, 'id'>) => {
+    const duplicate = state.convenios.some(
+      (c) =>
+        c.nombreConvenio.trim().toLowerCase() === conv.nombreConvenio.trim().toLowerCase() &&
+        c.entidad.trim().toLowerCase() === conv.entidad.trim().toLowerCase()
+    );
+    if (duplicate) {
+      notify('Ya existe un convenio registrado con la misma entidad y nombre.', 'warning');
+      return;
+    }
     const id = `conv-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
     setState((prev) =>
       touch(prev, {
@@ -859,6 +1248,15 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addSeguimiento = (registro: Omit<RegistroSeguimiento, 'id'>) => {
+    const duplicate = state.seguimiento.some(
+      (s) =>
+        s.nombreActividad.trim().toLowerCase() === registro.nombreActividad.trim().toLowerCase() &&
+        s.fecha === registro.fecha
+    );
+    if (duplicate) {
+      notify('Ya existe un registro de seguimiento para esa actividad en la misma fecha.', 'warning');
+      return;
+    }
     const id = `seg-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
     setState((prev) =>
       touch(prev, {
@@ -943,6 +1341,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     <BienestarContext.Provider
       value={{
         state,
+        isSaving,
         toasts,
         dismissToast,
         notify,
@@ -970,6 +1369,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
         addPresupuestoCostoItem,
         updatePresupuestoCostoItem,
         deletePresupuestoCostoItem,
+        reviewPresupuestoGerencia,
         addRespuestaEncuesta,
         updateRespuestaEncuestaAuthorized,
         addListaAsistencia,

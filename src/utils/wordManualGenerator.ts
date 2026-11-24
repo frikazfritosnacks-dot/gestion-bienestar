@@ -870,3 +870,304 @@ export function buildWordFilename(state: BienestarState): string {
   const ver = state.manual.portada.version.replace(/[^a-zA-Z0-9._-]/g, '');
   return `Manual_Bienestar_Social_Laboral_Frikaz_SAS_${code}_v${ver}.docx`;
 }
+
+export function buildMatrizWordFilename(state: BienestarState): string {
+  const code = state.matrizMeta.codigo.replace(/[^a-zA-Z0-9_-]/g, '-');
+  const ver = state.matrizMeta.version.replace(/[^a-zA-Z0-9._-]/g, '');
+  return `Matriz_Detallada_Bienestar_Frikaz_SAS_${code}_v${ver}.docx`;
+}
+
+export function buildFlujogramaWordFilename(state: BienestarState): string {
+  const code = state.matrizMeta.codigo.replace(/[^a-zA-Z0-9_-]/g, '-');
+  const ver = state.matrizMeta.version.replace(/[^a-zA-Z0-9._-]/g, '');
+  return `Flujograma_Bienestar_Frikaz_SAS_${code}_v${ver}.docx`;
+}
+
+function buildStandaloneSectionFooter(
+  empresa: string,
+  titulo: string,
+  codigo: string,
+  version: string,
+  fecha: string
+) {
+  return {
+    headers: {
+      default: new Header({
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.RIGHT,
+            children: [
+              new TextRun({
+                text: `${empresa} · ${codigo} (v${version})    Página `,
+                font: FONT_FAMILY,
+                size: 18,
+                color: COLOR_MUTED,
+              }),
+              new TextRun({
+                children: [PageNumber.CURRENT],
+                font: FONT_FAMILY,
+                size: 18,
+                bold: true,
+                color: COLOR_NAVY,
+              }),
+              new TextRun({
+                text: ' de ',
+                font: FONT_FAMILY,
+                size: 18,
+                color: COLOR_MUTED,
+              }),
+              new TextRun({
+                children: [PageNumber.TOTAL_PAGES],
+                font: FONT_FAMILY,
+                size: 18,
+                color: COLOR_MUTED,
+              }),
+            ],
+          }),
+        ],
+      }),
+    },
+    footers: {
+      default: new Footer({
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.LEFT,
+            children: [
+              new TextRun({
+                text: `${empresa} · ${titulo} · Vigencia ${fecha}`,
+                font: FONT_FAMILY,
+                size: 18,
+                color: COLOR_MUTED,
+              }),
+            ],
+          }),
+        ],
+      }),
+    },
+  };
+}
+
+/**
+ * Documento Word 2 independiente: Matriz Detallada del Procedimiento
+ */
+export async function generateMatrizWordBlob(state: BienestarState): Promise<Blob> {
+  const m = state.matrizMeta;
+  const logoAsset = await loadInstitutionalQualityLogo();
+  const headerFooter = buildStandaloneSectionFooter(
+    m.empresa,
+    'Matriz Detallada del Procedimiento de Bienestar Social Laboral',
+    m.codigo,
+    m.version,
+    m.fecha
+  );
+
+  const syntheticState: BienestarState = {
+    ...state,
+    manual: {
+      ...state.manual,
+      portada: {
+        ...state.manual.portada,
+        empresa: m.empresa,
+        nombreDocumento: 'MATRIZ DETALLADA DEL PROCEDIMIENTO DE BIENESTAR SOCIAL LABORAL',
+        codigoDocumental: m.codigo,
+        version: m.version,
+        fechaActualizacion: m.fecha,
+        areaResponsable: m.responsable,
+      },
+    },
+  };
+
+  const doc = new Document({
+    creator: m.empresa,
+    title: `Matriz Detallada · ${m.empresa}`,
+    description: `Matriz detallada de actividades y responsables (${m.codigo} v${m.version})`,
+    sections: [
+      {
+        properties: {
+          page: {
+            size: { width: 12240, height: 15840 },
+            margin: {
+              top: MARGIN_TWIPS,
+              bottom: MARGIN_TWIPS,
+              left: MARGIN_TWIPS,
+              right: MARGIN_TWIPS,
+            },
+          },
+        },
+        ...headerFooter,
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { line: 320, before: 0, after: 80 },
+            children: [
+              new TextRun({
+                text: m.empresa,
+                font: FONT_FAMILY,
+                size: 28,
+                bold: true,
+                color: COLOR_RED,
+              }),
+            ],
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { line: 340, before: 0, after: 200 },
+            children: [
+              new TextRun({
+                text: 'MATRIZ DETALLADA DEL PROCEDIMIENTO DE BIENESTAR SOCIAL LABORAL',
+                font: FONT_FAMILY,
+                size: 30,
+                bold: true,
+                color: COLOR_NAVY,
+              }),
+            ],
+          }),
+          buildQualityBoxTable(syntheticState, logoAsset),
+          apaHeading1('1. Objetivo y Alcance Operativo de la Matriz'),
+          apaParagraph(m.objetivo, { indent: true }),
+          apaParagraph(
+            `Responsable funcional: ${m.responsable}. Código documental: ${m.codigo} · Versión ${m.version} · Fecha de emisión: ${m.fecha}.`,
+            { indent: true }
+          ),
+          apaHeading1('2. Secuencia Detallada de Actividades, Responsables y Registros'),
+          ...apaTableCaption(
+            1,
+            `Matriz detallada de actividades sincronizadas del procedimiento de Bienestar Social Laboral de ${m.empresa}`
+          ),
+          buildMatrizTable(state),
+          apaTableNote(
+            `Total de actividades y compuertas activas en la plataforma: ${state.proceso.length}.`
+          ),
+        ],
+      },
+    ],
+  });
+
+  return Packer.toBlob(doc);
+}
+
+/**
+ * Documento Word 3 independiente: Flujograma Operativo del Procedimiento
+ */
+export async function generateFlujogramaWordBlob(state: BienestarState): Promise<Blob> {
+  const m = state.matrizMeta;
+  const logoAsset = await loadInstitutionalQualityLogo();
+  const headerFooter = buildStandaloneSectionFooter(
+    m.empresa,
+    'Flujograma del Procedimiento de Bienestar Social Laboral',
+    `${m.codigo}-FLU`,
+    m.version,
+    m.fecha
+  );
+
+  const syntheticState: BienestarState = {
+    ...state,
+    manual: {
+      ...state.manual,
+      portada: {
+        ...state.manual.portada,
+        empresa: m.empresa,
+        nombreDocumento: 'FLUJOGRAMA DEL PROCEDIMIENTO DE BIENESTAR SOCIAL LABORAL',
+        codigoDocumental: `${m.codigo}-FLU`,
+        version: m.version,
+        fechaActualizacion: m.fecha,
+        areaResponsable: m.responsable,
+      },
+    },
+  };
+
+  const doc = new Document({
+    creator: m.empresa,
+    title: `Flujograma · ${m.empresa}`,
+    description: `Flujograma secuencial y rutas de decisión (${m.codigo} v${m.version})`,
+    sections: [
+      {
+        properties: {
+          page: {
+            size: { width: 12240, height: 15840 },
+            margin: {
+              top: MARGIN_TWIPS,
+              bottom: MARGIN_TWIPS,
+              left: MARGIN_TWIPS,
+              right: MARGIN_TWIPS,
+            },
+          },
+        },
+        ...headerFooter,
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { line: 320, before: 0, after: 80 },
+            children: [
+              new TextRun({
+                text: m.empresa,
+                font: FONT_FAMILY,
+                size: 28,
+                bold: true,
+                color: COLOR_RED,
+              }),
+            ],
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { line: 340, before: 0, after: 200 },
+            children: [
+              new TextRun({
+                text: 'FLUJOGRAMA DEL PROCEDIMIENTO DE BIENESTAR SOCIAL LABORAL',
+                font: FONT_FAMILY,
+                size: 30,
+                bold: true,
+                color: COLOR_NAVY,
+              }),
+            ],
+          }),
+          buildQualityBoxTable(syntheticState, logoAsset),
+          apaHeading1('1. Convenciones Gráficas del Diagrama de Flujo'),
+          apaParagraph(
+            'El diagrama de flujo emplea simbología estándar ANSI/ISO para representar inicio/fin (Óvalo), actividades operativas (Rectángulo), compuertas de decisión SÍ/NO (Rombo), soportes documentales (Documento) y archivo institucional (Base de datos).',
+            { indent: true }
+          ),
+          apaHeading1('2. Secuencia Gráfica y Rutas de Decisión'),
+          ...apaTableCaption(
+            1,
+            `Flujograma operativo y compuertas de decisión de ${m.empresa}`
+          ),
+          buildFlujogramaTable(state),
+          apaTableNote(
+            `Nodos sincronizados directamente con la Matriz Detallada (${state.proceso.length} pasos en total).`
+          ),
+        ],
+      },
+    ],
+  });
+
+  return Packer.toBlob(doc);
+}
+
+function triggerWordBlobDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1800);
+}
+
+/**
+ * Descarga conjunta de los 3 documentos Word independientes: Manual, Matriz Detallada y Flujograma.
+ */
+export async function downloadManualMatrizFlujogramaThreeWord(state: BienestarState): Promise<void> {
+  const [manualBlob, matrizBlob, flujogramaBlob] = await Promise.all([
+    generateManualWordBlob(state),
+    generateMatrizWordBlob(state),
+    generateFlujogramaWordBlob(state),
+  ]);
+
+  triggerWordBlobDownload(manualBlob, buildWordFilename(state));
+  await new Promise((resolve) => setTimeout(resolve, 350));
+  triggerWordBlobDownload(matrizBlob, buildMatrizWordFilename(state));
+  await new Promise((resolve) => setTimeout(resolve, 350));
+  triggerWordBlobDownload(flujogramaBlob, buildFlujogramaWordFilename(state));
+}

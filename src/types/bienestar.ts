@@ -325,6 +325,7 @@ export interface RegistroSeguimiento {
 }
 
 export interface BienestarState {
+  manualContentVersion?: number;
   manual: ManualData;
   normograma: NormaItem[];
   terminologia: TerminoItem[];

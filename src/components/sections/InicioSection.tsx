@@ -88,9 +88,12 @@ export function InicioSection({ onSelectSection }: InicioSectionProps) {
   ];
 
   return (
-    <div className="space-y-10 py-2">
+    <div className="space-y-10 pt-10 sm:pt-12 pb-2">
       {/* Encabezado limpio y amplio de bienvenida */}
-      <section className="relative overflow-hidden rounded-3xl border border-[#FDE047] bg-white p-8 sm:p-10 shadow-xs">
+      <section
+        data-module-surface="true"
+        className="relative overflow-hidden rounded-3xl border border-[#FDE047] bg-white p-8 sm:p-10 shadow-xs"
+      >
         <div className="absolute inset-x-0 top-0 flex h-2">
           <div className="w-2/3 bg-[#D61F26]" />
           <div className="w-1/3 bg-[#FACC15]" />

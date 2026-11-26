@@ -227,7 +227,11 @@ export function EncuestasManager({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+      <section
+        data-submodule-surface="true"
+        data-piggy-context={`encuesta:${selectedActId}`}
+        className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
+      >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
             <h2 className="font-display text-lg font-extrabold text-[#0F294A]">
@@ -243,6 +247,7 @@ export function EncuestasManager({
             {onGoToRegistro && (
               <button
                 type="button"
+                data-piggy-submodule="true"
                 onClick={onGoToRegistro}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#0F294A] px-4 py-2 text-xs font-bold text-[#FACC15] hover:bg-[#163A66] cursor-pointer"
               >
@@ -253,6 +258,7 @@ export function EncuestasManager({
             )}
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={handleDownloadBlankTemplate}
               disabled={exportingBlank}
               className="inline-flex items-center gap-1.5 rounded-xl border border-[#FACC15] bg-[#FEF9C3] px-4 py-2 text-xs font-bold text-[#0F294A] hover:bg-[#FDE047] cursor-pointer"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Pencil,
   Check,
@@ -17,9 +17,9 @@ import { NormogramaManager } from '../manual/NormogramaManager';
 import { TerminologiaManager } from '../manual/TerminologiaManager';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import { ChipSvg } from '../ui/ChipGraphics';
+import { InstitutionalQualityBox } from '../ui/InstitutionalQualityBox';
 import {
   buildWordFilename,
-  downloadManualMatrizFlujogramaThreeWord,
   generateManualWordBlob,
 } from '../../utils/wordManualGenerator';
 
@@ -37,6 +37,8 @@ const SUB_TABS: Array<{ id: ManualSubSectionId; label: string }> = [
   { id: 'terminologia', label: '6. Terminología' },
 ];
 
+type EditableManualTextField = 'introduccion' | 'objetivoGeneral' | 'justificacion' | 'alcance';
+
 export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionProps) {
   const {
     state,
@@ -51,15 +53,33 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
   } = useBienestar();
 
   const [downloadingWord, setDownloadingWord] = useState(false);
-  const [downloadingThreeWord, setDownloadingThreeWord] = useState(false);
 
-  // Encabezado documental del manual (sin subapartado independiente de portada)
+  // Encabezado documental del manual (con guardado automático en vivo)
   const [editingHeaderMeta, setEditingHeaderMeta] = useState(false);
   const [headerMetaForm, setHeaderMetaForm] = useState(state.manual.portada);
+  const headerMetaOriginalRef = useRef(state.manual.portada);
 
   useEffect(() => {
-    setHeaderMetaForm(state.manual.portada);
-  }, [state.manual.portada]);
+    if (!editingHeaderMeta) {
+      setHeaderMetaForm(state.manual.portada);
+    }
+  }, [state.manual.portada, editingHeaderMeta]);
+
+  useEffect(() => {
+    if (!editingHeaderMeta) return;
+    if (
+      !headerMetaForm.empresa.trim() ||
+      !headerMetaForm.nombreDocumento.trim() ||
+      !headerMetaForm.areaResponsable.trim()
+    ) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      updatePortada(headerMetaForm, { silent: true });
+    }, 350);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [headerMetaForm, editingHeaderMeta]);
 
   const handleDownloadWord = async () => {
     if (downloadingWord) return;
@@ -75,27 +95,13 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
       anchor.download = buildWordFilename(state);
       anchor.click();
       URL.revokeObjectURL(url);
-      notify('Manual en formato Microsoft Word (.docx) descargado con la información vigente.');
+      notify(
+        'Manual de Procedimiento completo (.docx) descargado con Portada, Introducción, Objetivos, Alcance, Justificación, Normograma, Flujograma, Matriz Detallada y Terminología.'
+      );
     } catch {
       notify('No fue posible generar el archivo Word. Inténtalo nuevamente.', 'warning');
     } finally {
       setDownloadingWord(false);
-    }
-  };
-
-  const handleDownloadThreeWord = async () => {
-    if (downloadingThreeWord) return;
-    setDownloadingThreeWord(true);
-    try {
-      if (hasPendingWordSync) {
-        syncWordDocument(true);
-      }
-      await downloadManualMatrizFlujogramaThreeWord(state);
-      notify('Descargados los 3 documentos Word independientes: Manual, Matriz Detallada y Flujograma.');
-    } catch {
-      notify('No fue posible generar los 3 archivos Word. Inténtalo nuevamente.', 'warning');
-    } finally {
-      setDownloadingThreeWord(false);
     }
   };
 
@@ -111,26 +117,53 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
     }
   })();
 
-  // Edición de secciones de texto (introducción, objetivo general, justificación, alcance)
-  const [editingTextTab, setEditingTextTab] = useState<string | null>(null);
+  // Edición de secciones de texto (introducción, objetivo general, justificación, alcance) con autoguardado
+  const [editingTextTab, setEditingTextTab] = useState<EditableManualTextField | null>(null);
   const [textDraft, setTextDraft] = useState('');
+  const textOriginalRef = useRef('');
 
-  // Edición de objetivos específicos
+  // Edición de objetivos específicos con autoguardado
   const [newObjText, setNewObjText] = useState('');
   const [editingObjId, setEditingObjId] = useState<string | null>(null);
   const [editingObjText, setEditingObjText] = useState('');
+  const objOriginalRef = useRef('');
   const [deleteObjId, setDeleteObjId] = useState<string | null>(null);
 
-  const openTextEditor = (
-    field: 'introduccion' | 'objetivoGeneral' | 'justificacion' | 'alcance'
-  ) => {
-    setTextDraft(state.manual[field]);
+  useEffect(() => {
+    if (!editingTextTab) return;
+    if (!textDraft.trim()) return;
+    const timer = window.setTimeout(() => {
+      updateManualField(editingTextTab, textDraft.trim(), { silent: true });
+    }, 350);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [textDraft, editingTextTab]);
+
+  useEffect(() => {
+    if (!editingObjId) return;
+    if (!editingObjText.trim()) return;
+    const timer = window.setTimeout(() => {
+      updateObjetivoEspecifico(editingObjId, editingObjText.trim(), { silent: true });
+    }, 350);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingObjText, editingObjId]);
+
+  const openTextEditor = (field: EditableManualTextField) => {
+    const current = state.manual[field];
+    textOriginalRef.current = current;
+    setTextDraft(current);
     setEditingTextTab(field);
   };
 
-  const saveTextEditor = (
-    field: 'introduccion' | 'objetivoGeneral' | 'justificacion' | 'alcance'
-  ) => {
+  const cancelTextEditor = () => {
+    if (editingTextTab) {
+      updateManualField(editingTextTab, textOriginalRef.current, { silent: true });
+    }
+    setEditingTextTab(null);
+  };
+
+  const saveTextEditor = (field: EditableManualTextField) => {
     if (!textDraft.trim()) return;
     updateManualField(field, textDraft.trim());
     setEditingTextTab(null);
@@ -151,7 +184,11 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
           : 'border-[#0F294A]/15 bg-[#EFF6FF] text-[#0F294A]';
 
     return (
-      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <div
+        data-submodule-surface="true"
+        data-piggy-context={`manual:${field}`}
+        className="rounded-xl border border-slate-200 bg-white overflow-hidden"
+      >
         <div
           className={`flex flex-col gap-3 border-b px-6 py-4 sm:flex-row sm:items-center sm:justify-between ${toneHeader}`}
         >
@@ -180,23 +217,28 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                 onChange={(e) => setTextDraft(e.target.value)}
                 className="w-full rounded-lg border border-slate-300 bg-white p-3.5 text-sm leading-relaxed text-[#0F294A] focus:border-[#0F294A] focus:outline-none"
               />
-              <div className="flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setEditingTextTab(null)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#0F294A] hover:bg-slate-50 whitespace-nowrap shrink-0"
-                >
-                  <X className="h-4 w-4" />
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => saveTextEditor(field)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-4 py-2 text-sm font-semibold text-white hover:bg-[#B3161C] whitespace-nowrap shrink-0"
-                >
-                  <Check className="h-4 w-4" />
-                  Guardar cambios
-                </button>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="text-[11px] font-medium text-slate-500">
+                  Los cambios se guardan automáticamente mientras editas.
+                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={cancelTextEditor}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#0F294A] hover:bg-slate-50 whitespace-nowrap shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => saveTextEditor(field)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-4 py-2 text-sm font-semibold text-white hover:bg-[#B3161C] whitespace-nowrap shrink-0"
+                  >
+                    <Check className="h-4 w-4" />
+                    Guardar cambios
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -212,9 +254,12 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
   return (
     <div className="space-y-6">
       {/* Encabezado general de identificación documental del Manual */}
-      <section className="rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] p-5 sm:p-6">
+      <section data-module-surface="true" className="rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] p-5 sm:p-6">
         {editingHeaderMeta ? (
           <form
+            data-submodule-surface="true"
+            data-piggy-priority="form"
+            data-piggy-context="manual:edit-quality-box"
             onSubmit={(e) => {
               e.preventDefault();
               updatePortada(headerMetaForm);
@@ -229,7 +274,8 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
               <button
                 type="button"
                 onClick={() => {
-                  setHeaderMetaForm(state.manual.portada);
+                  updatePortada(headerMetaOriginalRef.current, { silent: true });
+                  setHeaderMetaForm(headerMetaOriginalRef.current);
                   setEditingHeaderMeta(false);
                 }}
                 className="rounded p-1 text-[#D61F26]/70 hover:text-[#D61F26]"
@@ -282,11 +328,11 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                 <label className="mb-1 block text-xs font-medium text-[#0F294A]">Código</label>
                 <input
                   type="text"
-                  required
                   value={headerMetaForm.codigoDocumental}
                   onChange={(e) =>
                     setHeaderMetaForm({ ...headerMetaForm, codigoDocumental: e.target.value })
                   }
+                  placeholder="Pendiente de asignación"
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-mono text-sm"
                 />
               </div>
@@ -294,11 +340,11 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                 <label className="mb-1 block text-xs font-medium text-[#0F294A]">Versión</label>
                 <input
                   type="text"
-                  required
                   value={headerMetaForm.version}
                   onChange={(e) =>
                     setHeaderMetaForm({ ...headerMetaForm, version: e.target.value })
                   }
+                  placeholder="Pendiente de asignación"
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-mono text-sm"
                 />
               </div>
@@ -308,11 +354,11 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                 </label>
                 <input
                   type="text"
-                  required
                   value={headerMetaForm.fechaActualizacion}
                   onChange={(e) =>
                     setHeaderMetaForm({ ...headerMetaForm, fechaActualizacion: e.target.value })
                   }
+                  placeholder="Pendiente de asignación"
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-mono text-sm"
                 />
               </div>
@@ -363,7 +409,8 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
               <button
                 type="button"
                 onClick={() => {
-                  setHeaderMetaForm(state.manual.portada);
+                  updatePortada(headerMetaOriginalRef.current, { silent: true });
+                  setHeaderMetaForm(headerMetaOriginalRef.current);
                   setEditingHeaderMeta(false);
                 }}
                 className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-[#0F294A]"
@@ -410,25 +457,23 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
               <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                 <button
                   type="button"
+                  data-piggy-ignore="true"
                   onClick={handleDownloadWord}
-                  disabled={downloadingWord || downloadingThreeWord}
+                  disabled={downloadingWord}
                   className="inline-flex items-center gap-2 rounded-lg bg-[#0F294A] border-b-2 border-[#FACC15] px-4 py-2.5 text-xs font-bold tracking-wide text-white shadow-xs transition-all duration-150 hover:bg-[#D61F26] hover:-translate-y-0.5 disabled:opacity-60 whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   <FileDown className="h-4 w-4 text-[#FACC15]" />
-                  {downloadingWord ? 'GENERANDO WORD...' : 'DESCARGAR MANUAL EN WORD'}
+                  {downloadingWord
+                    ? 'GENERANDO MANUAL COMPLETO...'
+                    : 'DESCARGAR MANUAL COMPLETO EN WORD'}
                 </button>
                 <button
                   type="button"
-                  onClick={handleDownloadThreeWord}
-                  disabled={downloadingWord || downloadingThreeWord}
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-3.5 py-2.5 text-xs font-bold text-white shadow-xs transition-all duration-150 hover:bg-[#B3161C] disabled:opacity-60 whitespace-nowrap shrink-0 cursor-pointer"
-                >
-                  <FileDown className="h-4 w-4 text-[#FACC15]" />
-                  {downloadingThreeWord ? 'GENERANDO 3 WORD...' : 'Descargar 3 Word (Manual + Matriz + Flujograma)'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingHeaderMeta(true)}
+                  onClick={() => {
+                    headerMetaOriginalRef.current = state.manual.portada;
+                    setHeaderMetaForm(state.manual.portada);
+                    setEditingHeaderMeta(true);
+                  }}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2.5 text-xs font-semibold text-[#0F294A] transition-all duration-150 hover:bg-[#FDE047] whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   <Pencil className="h-3.5 w-3.5 text-[#D61F26]" />
@@ -437,20 +482,29 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
               </div>
             </div>
 
-            {/* Caja de calidad y control de versiones / sincronización Word */}
+            {/* Caja de Calidad institucional unificada */}
+            <InstitutionalQualityBox
+              empresa={state.manual.portada.empresa}
+              tituloDocumento={state.manual.portada.nombreDocumento}
+              codigo={state.manual.portada.codigoDocumental}
+              version={state.manual.portada.version}
+              fecha={state.manual.portada.fechaActualizacion}
+            />
+
+            {/* Control de elaboración, aprobaciones y sincronización Word */}
             <div className="grid grid-cols-1 gap-3 border-t border-[#FCA5A5]/60 pt-3.5 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-lg border border-slate-200/80 bg-white px-3.5 py-2.5">
                 <p className="text-[11px] font-semibold text-slate-500">Elaborado / Revisado / Aprobado</p>
                 <p className="mt-0.5 text-xs font-semibold text-[#0F294A] truncate">
-                  {state.manual.portada.elaboradoPor || 'Sin registrar'} ·{' '}
-                  {state.manual.portada.revisadoPor || 'Sin registrar'} ·{' '}
-                  {state.manual.portada.aprobadoPor || 'Sin registrar'}
+                  {state.manual.portada.elaboradoPor || 'Pendiente de asignación'} ·{' '}
+                  {state.manual.portada.revisadoPor || 'Pendiente de asignación'} ·{' '}
+                  {state.manual.portada.aprobadoPor || 'Pendiente de asignación'}
                 </p>
               </div>
               <div className="rounded-lg border border-slate-200/80 bg-white px-3.5 py-2.5">
-                <p className="text-[11px] font-semibold text-slate-500">Versión del documento</p>
+                <p className="text-[11px] font-semibold text-slate-500">Contenido del manual</p>
                 <p className="mt-0.5 font-mono text-xs font-bold text-[#0F294A] tabular-nums">
-                  v{state.manual.portada.version} · {state.normograma.length} normas · {state.terminologia.length} términos
+                  {state.normograma.length} normas · {state.terminologia.length} términos
                 </p>
               </div>
               <div className="rounded-lg border border-slate-200/80 bg-white px-3.5 py-2.5">
@@ -481,7 +535,7 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                     <p className="text-[10px] opacity-80 truncate">
                       {hasPendingWordSync
                         ? 'Se actualizará antes de descargar'
-                        : 'Formato APA 7ª ed. vigente'}
+                        : 'Documento único APA 7ª ed. listo'}
                     </p>
                   </div>
                 </div>
@@ -516,6 +570,7 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                 type="button"
                 role="tab"
                 aria-selected={active}
+                data-piggy-submodule="true"
                 onClick={() => {
                   onChangeSubTab(tab.id);
                   setEditingTextTab(null);
@@ -533,20 +588,26 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
         </div>
       </div>
 
-      {/* 1. Introducción */}
-      {activeSubTab === 'introduccion' &&
-        renderEditableProseCard(
-          'introduccion',
-          'Introducción',
-          'Propósito general y lineamientos de participación, integración, reconocimiento y acompañamiento',
-          'navy'
-        )}
+      {/* Contenido del subapartado activo con margen superior limpio para el acompañante */}
+      <div className="pt-16 sm:pt-20">
+        {/* 1. Introducción */}
+        {activeSubTab === 'introduccion' &&
+          renderEditableProseCard(
+            'introduccion',
+            'Introducción',
+            'Propósito general y lineamientos de participación, integración, reconocimiento y acompañamiento',
+            'navy'
+          )}
 
-      {/* 2. Objetivos (Objetivo general + Objetivos específicos unificados) */}
-      {activeSubTab === 'objetivos' && (
-        <div className="space-y-6">
-          {/* Bloque A: Objetivo general */}
-          <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+        {/* 2. Objetivos (Objetivo general + Objetivos específicos unificados) */}
+        {activeSubTab === 'objetivos' && (
+          <div className="space-y-6">
+            {/* Bloque A: Objetivo general */}
+            <section
+              data-submodule-surface="true"
+              data-piggy-context="manual:objetivos"
+              className="rounded-xl border border-slate-200 bg-white overflow-hidden"
+            >
             <div className="flex flex-col gap-3 border-b border-[#FCA5A5] bg-[#FEF2F2] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-bold text-[#D61F26]">Objetivo general</h2>
@@ -578,7 +639,7 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                   <div className="flex items-center justify-end gap-3">
                     <button
                       type="button"
-                      onClick={() => setEditingTextTab(null)}
+                      onClick={cancelTextEditor}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#0F294A] hover:bg-slate-50 whitespace-nowrap shrink-0"
                     >
                       <X className="h-4 w-4" />
@@ -631,7 +692,12 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                           <div className="flex justify-end gap-2">
                             <button
                               type="button"
-                              onClick={() => setEditingObjId(null)}
+                              onClick={() => {
+                                updateObjetivoEspecifico(obj.id, objOriginalRef.current, {
+                                  silent: true,
+                                });
+                                setEditingObjId(null);
+                              }}
                               className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#0F294A]"
                             >
                               Cancelar
@@ -662,6 +728,7 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                             <button
                               type="button"
                               onClick={() => {
+                                objOriginalRef.current = obj.texto;
                                 setEditingObjId(obj.id);
                                 setEditingObjText(obj.texto);
                               }}
@@ -752,8 +819,9 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
       {/* 5. Normograma */}
       {activeSubTab === 'normograma' && <NormogramaManager />}
 
-      {/* 6. Terminología */}
-      {activeSubTab === 'terminologia' && <TerminologiaManager />}
+        {/* 6. Terminología */}
+        {activeSubTab === 'terminologia' && <TerminologiaManager />}
+      </div>
     </div>
   );
 }

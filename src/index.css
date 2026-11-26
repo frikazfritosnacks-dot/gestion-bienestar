@@ -69,32 +69,95 @@
   will-change: transform, opacity;
 }
 
-/* Frikaz Official Mascot Image Calm Layered Walk & Hoof-Print Animations */
-@keyframes frikaz-piggy-walk-gait {
+/* Frikaz Official Mascot Articulated Alternating Walk (Arms + Legs + Torso + Head) & Hoof-Print Animations */
+@keyframes frikaz-piggy-leg-stride {
   0% {
-    transform: translate3d(0, 0, 0) rotate(-1.8deg);
+    transform: translate3d(-1.5px, 0, 0) rotate(-13.5deg);
   }
   25% {
-    transform: translate3d(0, -2.5px, 0) rotate(0deg);
+    transform: translate3d(2px, -5.5px, 0) rotate(2deg);
   }
   50% {
-    transform: translate3d(0, 0, 0) rotate(1.8deg);
+    transform: translate3d(4.5px, -1px, 0) rotate(14deg);
   }
   75% {
-    transform: translate3d(0, -2.5px, 0) rotate(0deg);
+    transform: translate3d(0, 1px, 0) rotate(-3.5deg);
   }
   100% {
-    transform: translate3d(0, 0, 0) rotate(-1.8deg);
+    transform: translate3d(-1.5px, 0, 0) rotate(-13.5deg);
+  }
+}
+
+@keyframes frikaz-piggy-left-arm-swing {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-12deg);
+  }
+  25% {
+    transform: translate3d(-1px, -2px, 0) rotate(1deg);
+  }
+  50% {
+    transform: translate3d(1px, 1px, 0) rotate(13deg);
+  }
+  75% {
+    transform: translate3d(0, -1px, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-12deg);
+  }
+}
+
+@keyframes frikaz-piggy-right-arm-swing {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(12deg);
+  }
+  25% {
+    transform: translate3d(1px, -2px, 0) rotate(-1deg);
+  }
+  50% {
+    transform: translate3d(-1px, 1px, 0) rotate(-13deg);
+  }
+  75% {
+    transform: translate3d(0, -1px, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(12deg);
+  }
+}
+
+@keyframes frikaz-piggy-torso-stride {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-1.3deg);
+  }
+  25% {
+    transform: translate3d(0, -3.5px, 0) rotate(0.3deg);
+  }
+  50% {
+    transform: translate3d(0, 0, 0) rotate(1.3deg);
+  }
+  75% {
+    transform: translate3d(0, -3.5px, 0) rotate(-0.3deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-1.3deg);
+  }
+}
+
+@keyframes frikaz-piggy-head-stride {
+  0%, 50%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  25%, 75% {
+    transform: translate3d(0, -2.5px, 0) rotate(0.4deg);
   }
 }
 
 @keyframes frikaz-piggy-shadow-pulse {
   0%, 50%, 100% {
     transform: scaleX(1) scaleY(1);
-    opacity: 0.24;
+    opacity: 0.26;
   }
   25%, 75% {
-    transform: scaleX(0.92) scaleY(0.94);
+    transform: scaleX(0.9) scaleY(0.92);
     opacity: 0.18;
   }
 }
@@ -104,49 +167,158 @@
     transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
-    transform: translate3d(0, -2.5px, 0) scale(1.01);
+    transform: translate3d(0, -2px, 0) scale(1.008);
   }
 }
 
 @keyframes frikaz-hoof-fade {
   0% {
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale(0.75);
   }
-  18% {
-    opacity: 0.6;
+  16% {
+    opacity: 0.68;
     transform: scale(1);
   }
   72% {
     opacity: 0.42;
-    transform: scale(0.98);
+    transform: scale(0.96);
   }
   100% {
     opacity: 0;
-    transform: scale(0.88);
+    transform: scale(0.84);
+  }
+}
+
+@keyframes frikaz-piggy-sitting-breathe {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -1.2px, 0);
+  }
+}
+
+@keyframes frikaz-piggy-foot-dangle-left {
+  0%, 100% {
+    transform: rotate(-1.5deg);
+  }
+  50% {
+    transform: rotate(2.6deg);
+  }
+}
+
+@keyframes frikaz-piggy-foot-dangle-right {
+  0%, 100% {
+    transform: rotate(2.4deg);
+  }
+  50% {
+    transform: rotate(-1.8deg);
+  }
+}
+
+@keyframes frikaz-piggy-climbing-step {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -2.5px, 0);
   }
 }
 
 .frikaz-hoof-print {
-  animation: frikaz-hoof-fade 2.8s ease-out forwards;
+  animation: frikaz-hoof-fade 2.6s ease-out forwards;
   will-change: transform, opacity;
 }
 
-.frikaz-piggy-walking .piggy-sprite-layer {
-  transform-origin: 50% 88%;
-  animation: frikaz-piggy-walk-gait 1.12s ease-in-out infinite;
+.piggy-sprite-wrap {
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
+}
+
+.piggy-limb {
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.frikaz-piggy-idle .piggy-left-arm,
+.frikaz-piggy-idle .piggy-right-arm,
+.frikaz-piggy-idle .piggy-left-leg,
+.frikaz-piggy-idle .piggy-right-leg {
+  transform: translate3d(0, 0, 0) rotate(0deg);
+}
+
+.frikaz-piggy-walking .piggy-left-leg {
+  transform-origin: 43% 66%;
+  animation: frikaz-piggy-leg-stride 0.78s ease-in-out infinite;
+}
+
+.frikaz-piggy-walking .piggy-right-leg {
+  transform-origin: 57% 66%;
+  animation: frikaz-piggy-leg-stride 0.78s ease-in-out -0.39s infinite;
+}
+
+/* Brazo izquierdo contrario a la pierna izquierda (-0.39s respecto a left-leg); brazo derecho contrario a right-leg */
+.frikaz-piggy-walking .piggy-left-arm {
+  transform-origin: 36.5% 41%;
+  animation: frikaz-piggy-left-arm-swing 0.78s ease-in-out -0.39s infinite;
+}
+
+.frikaz-piggy-walking .piggy-right-arm {
+  transform-origin: 67.5% 41%;
+  animation: frikaz-piggy-right-arm-swing 0.78s ease-in-out infinite;
+}
+
+.frikaz-piggy-walking .piggy-torso {
+  transform-origin: 50% 56%;
+  animation: frikaz-piggy-torso-stride 0.78s ease-in-out infinite;
+}
+
+.frikaz-piggy-walking .piggy-head {
+  transform-origin: 50% 34%;
+  animation: frikaz-piggy-head-stride 0.78s ease-in-out infinite;
 }
 
 .frikaz-piggy-walking .piggy-shadow-layer {
   transform-origin: center;
-  animation: frikaz-piggy-shadow-pulse 1.12s ease-in-out infinite;
+  animation: frikaz-piggy-shadow-pulse 0.78s ease-in-out infinite;
 }
 
-.frikaz-piggy-idle .piggy-sprite-layer {
-  transform-origin: 50% 90%;
+.frikaz-piggy-idle .piggy-torso,
+.frikaz-piggy-idle .piggy-head {
+  transform-origin: 50% 56%;
   animation: frikaz-piggy-idle-breathe 3.2s ease-in-out infinite;
-  will-change: transform;
+}
+
+/* Pose de subida al módulo: cuerpo erguido apoyando manos y elevando la pierna hacia el borde */
+.frikaz-piggy-climbing .piggy-climbing-cutout {
+  animation: frikaz-piggy-climbing-step 0.42s ease-in-out infinite;
+}
+
+/* Pose sentada erguida del cerdito oficial sobre el borde superior del módulo (sin inclinación diagonal) */
+.frikaz-piggy-sitting .piggy-seated-upper,
+.frikaz-piggy-lowering .piggy-seated-upper {
+  transform: translate3d(0, 0, 0) rotate(0deg);
+}
+
+.frikaz-piggy-sitting .piggy-seated-upper {
+  animation: frikaz-piggy-sitting-breathe 3.8s ease-in-out infinite;
+}
+
+.frikaz-piggy-sitting .piggy-seated-left-leg {
+  transform-origin: 35% 74%;
+  animation: frikaz-piggy-foot-dangle-left 4.2s ease-in-out infinite;
+}
+
+.frikaz-piggy-sitting .piggy-seated-right-leg {
+  transform-origin: 60% 74%;
+  animation: frikaz-piggy-foot-dangle-right 4.2s ease-in-out infinite;
+}
+
+.frikaz-piggy-sitting .piggy-shadow-layer,
+.frikaz-piggy-lowering .piggy-shadow-layer {
+  opacity: 0.28;
+  transition: opacity 280ms ease-out;
 }
 
 /* Official Google Sign-In button styling */
@@ -188,7 +360,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *:not(.piggy-sprite-wrap):not(.piggy-limb):not(.piggy-left-arm):not(.piggy-right-arm):not(.piggy-left-leg):not(.piggy-right-leg):not(.piggy-torso):not(.piggy-head):not(.piggy-climbing-cutout):not(.piggy-seated-upper):not(.piggy-seated-left-leg):not(.piggy-seated-right-leg):not(.piggy-shadow-layer):not(.frikaz-hoof-print),
+  *:not(.piggy-sprite-wrap):not(.piggy-limb):not(.piggy-left-arm):not(.piggy-right-arm):not(.piggy-left-leg):not(.piggy-right-leg):not(.piggy-torso):not(.piggy-head):not(.piggy-climbing-cutout):not(.piggy-seated-upper):not(.piggy-seated-left-leg):not(.piggy-seated-right-leg):not(.piggy-shadow-layer):not(.frikaz-hoof-print)::before,
+  *:not(.piggy-sprite-wrap):not(.piggy-limb):not(.piggy-left-arm):not(.piggy-right-arm):not(.piggy-left-leg):not(.piggy-right-leg):not(.piggy-torso):not(.piggy-head):not(.piggy-climbing-cutout):not(.piggy-seated-upper):not(.piggy-seated-left-leg):not(.piggy-seated-right-leg):not(.piggy-shadow-layer):not(.frikaz-hoof-print)::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

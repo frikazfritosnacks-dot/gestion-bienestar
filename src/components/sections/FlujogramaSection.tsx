@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus,
   Pencil,
@@ -10,18 +10,13 @@ import {
   X,
   Check,
   AlertCircle,
-  FileDown,
 } from 'lucide-react';
 import { useBienestar } from '../../context/BienestarContext';
 import { FlowchartSymbol, ProcessStep } from '../../types/bienestar';
 import { SYMBOL_LABELS, SymbolGraphic } from '../ui/SymbolGraphic';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import { ChipSvg } from '../ui/ChipGraphics';
-import {
-  buildFlujogramaWordFilename,
-  downloadManualMatrizFlujogramaThreeWord,
-  generateFlujogramaWordBlob,
-} from '../../utils/wordManualGenerator';
+import { InstitutionalQualityBox } from '../ui/InstitutionalQualityBox';
 
 interface FlujogramaSectionProps {
   onOpenMatriz: () => void;
@@ -30,47 +25,35 @@ interface FlujogramaSectionProps {
 const SYMBOLS: FlowchartSymbol[] = ['oval', 'rectangle', 'diamond', 'document', 'cylinder'];
 
 export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
-  const { state, addProcessStep, updateProcessStep, deleteProcessStep, notify } = useBienestar();
+  const { state, addProcessStep, updateProcessStep, deleteProcessStep } = useBienestar();
 
   const [selectedId, setSelectedId] = useState<string | null>(state.proceso[0]?.id ?? null);
   const [simulatedBranch, setSimulatedBranch] = useState<Record<string, 'yes' | 'no'>>({});
   const [editMode, setEditMode] = useState(false);
-  const [downloadingFlujoWord, setDownloadingFlujoWord] = useState(false);
-  const [downloadingThreeWord, setDownloadingThreeWord] = useState(false);
-
-  const handleDownloadFlujoWord = async () => {
-    if (downloadingFlujoWord) return;
-    setDownloadingFlujoWord(true);
-    try {
-      const blob = await generateFlujogramaWordBlob(state);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = buildFlujogramaWordFilename(state);
-      a.click();
-      URL.revokeObjectURL(url);
-      notify('Flujograma descargado en Word (.docx).');
-    } catch {
-      notify('No fue posible generar el Flujograma en Word. Inténtalo de nuevo.', 'warning');
-    } finally {
-      setDownloadingFlujoWord(false);
-    }
-  };
-
-  const handleDownloadThreeWord = async () => {
-    if (downloadingThreeWord) return;
-    setDownloadingThreeWord(true);
-    try {
-      await downloadManualMatrizFlujogramaThreeWord(state);
-      notify('Descargados los 3 archivos Word independientes: Manual, Matriz y Flujograma.');
-    } catch {
-      notify('No fue posible generar los 3 archivos Word. Inténtalo nuevamente.', 'warning');
-    } finally {
-      setDownloadingThreeWord(false);
-    }
-  };
 
   const [editingStep, setEditingStep] = useState<ProcessStep | null>(null);
+  const editingStepOriginalRef = useRef<ProcessStep | null>(null);
+
+  useEffect(() => {
+    if (!editingStep) return;
+    if (!editingStep.actividad.trim() || !editingStep.responsable.trim()) return;
+    const timer = window.setTimeout(() => {
+      const isDiamond = editingStep.symbol === 'diamond' || editingStep.isDecision;
+      updateProcessStep(
+        {
+          ...editingStep,
+          actividad: editingStep.actividad.trim(),
+          descripcion: editingStep.descripcion.trim(),
+          responsable: editingStep.responsable.trim(),
+          registroDocumento: editingStep.registroDocumento.trim() || 'N/A',
+          isDecision: isDiamond,
+        },
+        { silent: true }
+      );
+    }, 350);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingStep]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState<{
     symbol: FlowchartSymbol;
@@ -260,88 +243,82 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
 
   return (
     <div className="space-y-6">
-      {/* Barra superior del Flujograma */}
-      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-extrabold text-[#0F294A]">
-              Flujograma del Procedimiento · {state.matrizMeta.empresa}
-            </h1>
-            <ChipSvg variant="chip" className="hidden sm:block h-5 w-5 shrink-0" />
-          </div>
-          <p className="text-xs text-slate-600">
-            Integrado en tiempo real con la Matriz Detallada ({state.matrizMeta.codigo}) · Haz clic
-            en cualquier nodo para consultar o editar su ruta.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <div className="flex items-center rounded-lg bg-slate-100 p-1">
-            <button
-              type="button"
-              onClick={() => {
-                setEditMode(false);
-                setEditingStep(null);
-              }}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
-                !editMode ? 'bg-[#0F294A] text-white shadow-2xs' : 'text-[#0F294A]'
-              }`}
-            >
-              <Eye className="h-3.5 w-3.5" />
-              Modo consulta
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditMode(true)}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
-                editMode ? 'bg-[#D61F26] text-white border-b border-[#FACC15] shadow-2xs' : 'text-[#0F294A]'
-              }`}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Modo edición
-            </button>
+      {/* Barra superior y Caja de Calidad del Flujograma */}
+      <div data-module-surface="true" className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-extrabold text-[#0F294A]">
+                Flujograma del Procedimiento · {state.matrizMeta.empresa}
+              </h1>
+              <ChipSvg variant="chip" className="hidden sm:block h-5 w-5 shrink-0" />
+            </div>
+            <p className="text-xs text-slate-600">
+              Integrado en tiempo real con la Matriz Detallada ({state.matrizMeta.codigo || 'Pendiente'}) · Haz clic
+              en cualquier nodo para consultar o editar su ruta.
+            </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleDownloadFlujoWord}
-            disabled={downloadingFlujoWord || downloadingThreeWord}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0F294A] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-bold text-white transition-all duration-150 hover:bg-[#D61F26] whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            <FileDown className="h-3.5 w-3.5 text-[#FACC15]" />
-            {downloadingFlujoWord ? 'Generando...' : 'Descargar Flujograma (.docx)'}
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1">
+              <button
+                type="button"
+                data-piggy-submodule="true"
+                onClick={() => {
+                  setEditMode(false);
+                  setEditingStep(null);
+                }}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                  !editMode ? 'bg-[#0F294A] text-white shadow-2xs' : 'text-[#0F294A]'
+                }`}
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Modo consulta
+              </button>
+              <button
+                type="button"
+                data-piggy-submodule="true"
+                onClick={() => setEditMode(true)}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                  editMode ? 'bg-[#D61F26] text-white border-b border-[#FACC15] shadow-2xs' : 'text-[#0F294A]'
+                }`}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Modo edición
+              </button>
+            </div>
 
-          <button
-            type="button"
-            onClick={handleDownloadThreeWord}
-            disabled={downloadingFlujoWord || downloadingThreeWord}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-bold text-white transition-all duration-150 hover:bg-[#B3161C] whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            <FileDown className="h-3.5 w-3.5 text-[#FACC15]" />
-            {downloadingThreeWord ? 'Generando 3 Word...' : 'Descargar 3 Word'}
-          </button>
+            {editMode && (
+              <button
+                type="button"
+                onClick={() => setShowAddModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-semibold text-white transition-all duration-150 hover:bg-[#B3161C] hover:-translate-y-0.5 whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5 text-[#FACC15]" />
+                Agregar nodo
+              </button>
+            )}
 
-          {editMode && (
             <button
               type="button"
-              onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-semibold text-white transition-all duration-150 hover:bg-[#B3161C] hover:-translate-y-0.5 whitespace-nowrap shrink-0 cursor-pointer"
+              data-piggy-section-nav="true"
+              data-piggy-target="true"
+              onClick={onOpenMatriz}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2 text-xs font-semibold text-[#0F294A] transition-colors hover:bg-[#FDE047] whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <Plus className="h-3.5 w-3.5 text-[#FACC15]" />
-              Agregar nodo
+              <FileSpreadsheet className="h-3.5 w-3.5 text-[#D61F26]" />
+              Ver Matriz
             </button>
-          )}
-
-          <button
-            type="button"
-            onClick={onOpenMatriz}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2 text-xs font-semibold text-[#0F294A] transition-colors hover:bg-[#FDE047] whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            <FileSpreadsheet className="h-3.5 w-3.5 text-[#D61F26]" />
-            Ver Matriz
-          </button>
+          </div>
         </div>
+
+        <InstitutionalQualityBox
+          empresa={state.matrizMeta.empresa}
+          tituloDocumento="FLUJOGRAMA DEL PROCEDIMIENTO DE BIENESTAR SOCIAL LABORAL"
+          codigo={state.matrizMeta.codigo}
+          version={state.matrizMeta.version}
+          fecha={state.matrizMeta.fecha}
+        />
       </div>
 
       {/* Leyenda de simbología */}
@@ -356,7 +333,7 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
       </div>
 
       {/* Área principal: Diagrama vertical + Panel lateral de detalle / edición */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
+      <div className="grid grid-cols-1 gap-6 pt-12 xl:grid-cols-12 items-start">
         {/* Canvas vertical del Flujograma */}
         <div className="xl:col-span-8 rounded-xl border border-slate-200 bg-[#F8FAFC] p-5 sm:p-8 overflow-x-auto">
           <div className="mx-auto flex min-w-[320px] max-w-3xl flex-col items-center">
@@ -388,6 +365,7 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
                       <div
                         role="button"
                         tabIndex={0}
+                        data-piggy-submodule="true"
                         onClick={() => setSelectedId(step.id)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') setSelectedId(step.id);
@@ -401,6 +379,7 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
                         <div className="mt-2 flex items-center justify-center gap-2">
                           <button
                             type="button"
+                            data-piggy-submodule="true"
                             onClick={() =>
                               setSimulatedBranch((prev) => ({ ...prev, [step.id]: 'yes' }))
                             }
@@ -415,6 +394,7 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
                           </button>
                           <button
                             type="button"
+                            data-piggy-submodule="true"
                             onClick={() =>
                               setSimulatedBranch((prev) => ({ ...prev, [step.id]: 'no' }))
                             }
@@ -445,6 +425,7 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
                         <div
                           role="button"
                           tabIndex={0}
+                          data-piggy-submodule="true"
                           onClick={() => setSelectedId(noTargetNode.id)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') setSelectedId(noTargetNode.id);
@@ -504,7 +485,11 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
         </div>
 
         {/* Panel derecho: Inspección / Edición de nodo seleccionado */}
-        <aside className="xl:col-span-4 rounded-xl border border-slate-200 bg-white p-5 sticky top-6">
+        <aside
+          data-submodule-surface="true"
+          data-piggy-context={`flujograma:node:${selectedNode?.id ?? 'none'}`}
+          className="xl:col-span-4 rounded-xl border border-slate-200 bg-white p-5 sticky top-20"
+        >
           {!selectedNode ? (
             <p className="text-sm text-slate-500">
               Selecciona cualquier elemento del flujograma para ver sus detalles o editarlo.
@@ -515,7 +500,12 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
                 <h2 className="text-sm font-bold text-[#D61F26]">Editar nodo del proceso</h2>
                 <button
                   type="button"
-                  onClick={() => setEditingStep(null)}
+                  onClick={() => {
+                    if (editingStepOriginalRef.current) {
+                      updateProcessStep(editingStepOriginalRef.current, { silent: true });
+                    }
+                    setEditingStep(null);
+                  }}
                   className="rounded p-1 text-slate-400 hover:text-[#0F294A]"
                 >
                   <X className="h-4 w-4" />
@@ -559,10 +549,10 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
               <div>
                 <label className="mb-1 block text-xs font-medium text-[#0F294A]">Descripción</label>
                 <textarea
-                  rows={3}
+                  rows={5}
                   value={editingStep.descripcion}
                   onChange={(e) => setEditingStep({ ...editingStep, descripcion: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm leading-relaxed"
                 />
               </div>
 
@@ -677,7 +667,12 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setEditingStep(null)}
+                  onClick={() => {
+                    if (editingStepOriginalRef.current) {
+                      updateProcessStep(editingStepOriginalRef.current, { silent: true });
+                    }
+                    setEditingStep(null);
+                  }}
                   className="rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-[#0F294A]"
                 >
                   Cancelar
@@ -751,7 +746,10 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
                 <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
                   <button
                     type="button"
-                    onClick={() => setEditingStep({ ...selectedNode })}
+                    onClick={() => {
+                      editingStepOriginalRef.current = { ...selectedNode };
+                      setEditingStep({ ...selectedNode });
+                    }}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3 py-2 text-xs font-semibold text-[#0F294A] hover:bg-[#FDE047]"
                   >
                     <Pencil className="h-3.5 w-3.5 text-[#D61F26]" />
@@ -775,11 +773,15 @@ export function FlujogramaSection({ onOpenMatriz }: FlujogramaSectionProps) {
       {/* Modal para agregar nuevo nodo al flujograma y matriz */}
       {showAddModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/40 p-4 backdrop-blur-[2px]"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/40 p-4 pt-16 backdrop-blur-[2px]"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-lg">
+          <div
+            data-piggy-modal-surface="true"
+            data-piggy-context="flujograma:add-node"
+            className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+          >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-[#0F294A]">
                 Agregar actividad o decisión al Flujograma

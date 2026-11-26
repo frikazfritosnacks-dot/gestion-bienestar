@@ -25,6 +25,7 @@ import {
 } from '../../utils/excelFormatsGenerator';
 import { FormatoWordKey, generateWordFormatBlob } from '../../utils/wordFormatsGenerator';
 import { ConfirmModal } from '../ui/ConfirmModal';
+import { InstitutionalQualityBox } from '../ui/InstitutionalQualityBox';
 
 type CategoriaFormato =
   | 'Planificación'
@@ -58,43 +59,42 @@ interface FormatoCatalogItem {
   key: FormatoWordKey | FormatoExcelKey;
   titulo: string;
   descripcion: string;
-  codigo: string;
   perActivity?: boolean;
 }
 
 const CATALOGO_FORMATOS: FormatoCatalogItem[] = [
   // Planificación
-  { id: 'w-portada', categoria: 'Planificación', tipo: 'word', key: 'portada', titulo: 'Portada del Plan Anual de Bienestar 2027', descripcion: 'Portada institucional 2027 con Caja de Calidad y aprobaciones.', codigo: 'TH-FBS-01' },
-  { id: 'w-planif', categoria: 'Planificación', tipo: 'word', key: 'planificacion', titulo: 'Documento de planificación general del programa', descripcion: 'Objetivo general, alcance, 10 trabajadores, 8 dimensiones y presupuesto.', codigo: 'TH-FBS-02' },
-  { id: 'w-ficha', categoria: 'Planificación', tipo: 'word', key: 'ficha', titulo: 'Ficha técnica individual por actividad (9 actividades)', descripcion: 'Los 16 parámetros de planificación y desglose de costos de la actividad elegida.', codigo: 'TH-FT-01..09', perActivity: true },
-  { id: 'w-convenios', categoria: 'Planificación', tipo: 'word', key: 'convenios', titulo: 'Formato de registro de convenios', descripcion: 'Consolidado institucional de alianzas vigentes y condiciones.', codigo: 'TH-FBS-12' },
+  { id: 'w-portada', categoria: 'Planificación', tipo: 'word', key: 'portada', titulo: 'Portada del Plan Anual de Bienestar 2027', descripcion: 'Portada institucional 2027 con Caja de Calidad y campos de aprobación en blanco.' },
+  { id: 'w-planif', categoria: 'Planificación', tipo: 'word', key: 'planificacion', titulo: 'Documento de planificación general del programa', descripcion: 'Objetivo general, alcance, 8 dimensiones y casillas en blanco de ejecución.' },
+  { id: 'w-ficha', categoria: 'Planificación', tipo: 'word', key: 'ficha', titulo: 'Ficha técnica individual por actividad (9 actividades)', descripcion: 'Parámetros de la actividad seleccionada y tabla de ejecución en blanco.', perActivity: true },
+  { id: 'w-convenios', categoria: 'Planificación', tipo: 'word', key: 'convenios', titulo: 'Formato de registro de convenios', descripcion: 'Planilla en blanco de alianzas vigentes, beneficios, contacto y vigencia.' },
   // Presupuesto
-  { id: 'x-pres-gral', categoria: 'Presupuesto', tipo: 'excel', key: 'presupuesto_general', titulo: 'Presupuesto general anual 2027', descripcion: 'Asignado vs. ejecutado, disponible, diferencia y % con fórmulas automáticas.', codigo: 'TH-PG-01' },
-  { id: 'x-desglose', categoria: 'Presupuesto', tipo: 'excel', key: 'desglose_presupuestal', titulo: 'Desglose presupuestal por actividad', descripcion: 'Recurso, cantidad, unidad, valor unitario y total (=Cantidad*Unitario).', codigo: 'TH-DP-02' },
+  { id: 'x-pres-gral', categoria: 'Presupuesto', tipo: 'excel', key: 'presupuesto_general', titulo: 'Presupuesto general anual 2027', descripcion: 'Asignado vs. ejecutado, disponible, diferencia y % con fórmulas automáticas.' },
+  { id: 'x-desglose', categoria: 'Presupuesto', tipo: 'excel', key: 'desglose_presupuestal', titulo: 'Desglose presupuestal por actividad', descripcion: 'Recurso, cantidad, unidad, valor unitario y total (=Cantidad*Unitario).' },
   // Cronograma
-  { id: 'x-crono', categoria: 'Cronograma', tipo: 'excel', key: 'cronograma_anual', titulo: 'Cronograma anual 2027', descripcion: 'Las 9 actividades con los 15 parámetros obligatorios desde enero 2027.', codigo: 'TH-CR-03' },
-  { id: 'x-gantt', categoria: 'Cronograma', tipo: 'excel', key: 'diagrama_gantt', titulo: 'Diagrama de Gantt 2027', descripcion: 'Bloques mensuales Ene–Dic 2027, responsables, estados y conteos (=COUNTIF).', codigo: 'TH-GT-04' },
+  { id: 'x-crono', categoria: 'Cronograma', tipo: 'excel', key: 'cronograma_anual', titulo: 'Cronograma anual 2027', descripcion: 'Estructura en blanco con los 15 parámetros del plan anual.' },
+  { id: 'x-gantt', categoria: 'Cronograma', tipo: 'excel', key: 'diagrama_gantt', titulo: 'Diagrama de Gantt 2027', descripcion: 'Bloques mensuales Ene–Dic 2027 en blanco con conteos automáticos (=COUNTIF).' },
   // Asistencia
-  { id: 'w-asist', categoria: 'Asistencia', tipo: 'word', key: 'asistencia', titulo: 'Formato de lista de asistencia (imprimible)', descripcion: 'Planilla formal en Word lista para firma física y archivo.', codigo: 'TH-FBS-05', perActivity: true },
-  { id: 'x-asist', categoria: 'Asistencia', tipo: 'excel', key: 'asistencia', titulo: 'Lista de asistencia editable', descripcion: 'Libro Excel con filtros y conteo automático de asistentes (=COUNTA).', codigo: 'TH-AS-06' },
+  { id: 'w-asist', categoria: 'Asistencia', tipo: 'word', key: 'asistencia', titulo: 'Formato de lista de asistencia (imprimible)', descripcion: 'Planilla formal en Word lista para firma física y archivo.', perActivity: true },
+  { id: 'x-asist', categoria: 'Asistencia', tipo: 'excel', key: 'asistencia', titulo: 'Lista de asistencia editable', descripcion: 'Libro Excel en blanco con filtros y conteo automático de asistentes (=COUNTA).' },
   // Encuestas
-  { id: 'w-enc', categoria: 'Encuestas', tipo: 'word', key: 'encuesta', titulo: 'Formato de encuesta de satisfacción por actividad', descripcion: 'Cuestionario específico de la actividad elegida con escala 1–5.', codigo: 'TH-ES-01..09', perActivity: true },
-  { id: 'x-enc', categoria: 'Encuestas', tipo: 'excel', key: 'encuesta', titulo: 'Encuestas de satisfacción y consolidación', descripcion: 'Tabulación automática (=AVERAGE) + hoja de cuestionarios específicos.', codigo: 'TH-EC-07' },
-  { id: 'x-bd-enc', categoria: 'Encuestas', tipo: 'excel', key: 'bd_encuestas', titulo: 'Base de datos de resultados de encuestas', descripcion: 'Histórico normalizado + tablero dinámico (=COUNTIF / =AVERAGEIF).', codigo: 'TH-BD-08' },
+  { id: 'w-enc', categoria: 'Encuestas', tipo: 'word', key: 'encuesta', titulo: 'Formato de encuesta de satisfacción por actividad', descripcion: 'Cuestionario específico de la actividad elegida con escala 1–5 en blanco.', perActivity: true },
+  { id: 'x-enc', categoria: 'Encuestas', tipo: 'excel', key: 'encuesta', titulo: 'Encuestas de satisfacción y consolidación', descripcion: 'Tabulación automática (=AVERAGE) + hoja de cuestionarios específicos.' },
+  { id: 'x-bd-enc', categoria: 'Encuestas', tipo: 'excel', key: 'bd_encuestas', titulo: 'Base de datos de resultados de encuestas', descripcion: 'Histórico normalizado en blanco + tablero dinámico (=COUNTIF / =AVERAGEIF).' },
   // Seguimiento
-  { id: 'w-acta', categoria: 'Seguimiento', tipo: 'word', key: 'acta', titulo: 'Formato de acta de ejecución de actividades', descripcion: 'Acta diligenciable de jornada, recursos ejecutados y compromisos.', codigo: 'TH-FBS-06' },
-  { id: 'w-evid', categoria: 'Seguimiento', tipo: 'word', key: 'evidencias', titulo: 'Formato de registro de evidencias', descripcion: 'Control documental de soportes fotográficos y planillas 2027.', codigo: 'TH-FBS-07' },
-  { id: 'w-comp', categoria: 'Seguimiento', tipo: 'word', key: 'compromisos', titulo: 'Formato de seguimiento de compromisos', descripcion: 'Matriz de compromisos, responsables, fechas pactadas y cierre.', codigo: 'TH-FBS-10' },
-  { id: 'x-seg', categoria: 'Seguimiento', tipo: 'excel', key: 'seguimiento', titulo: 'Seguimiento de ejecución de actividades', descripcion: 'Estado, cumplimiento promedio (=AVERAGE), metas y evidencias.', codigo: 'TH-SG-05' },
-  { id: 'x-evid', categoria: 'Seguimiento', tipo: 'excel', key: 'control_evidencias', titulo: 'Control de evidencias', descripcion: 'Seguimiento de archivo y % de verificación documental (=COUNTIF).', codigo: 'TH-EV-11' },
+  { id: 'w-acta', categoria: 'Seguimiento', tipo: 'word', key: 'acta', titulo: 'Formato de acta de ejecución de actividades', descripcion: 'Acta diligenciable en blanco de jornada, recursos ejecutados y compromisos.' },
+  { id: 'w-evid', categoria: 'Seguimiento', tipo: 'word', key: 'evidencias', titulo: 'Formato de registro de evidencias', descripcion: 'Control documental en blanco de soportes fotográficos y planillas 2027.' },
+  { id: 'w-comp', categoria: 'Seguimiento', tipo: 'word', key: 'compromisos', titulo: 'Formato de seguimiento de compromisos', descripcion: 'Matriz en blanco de compromisos, responsables, fechas pactadas y cierre.' },
+  { id: 'x-seg', categoria: 'Seguimiento', tipo: 'excel', key: 'seguimiento', titulo: 'Seguimiento de ejecución de actividades', descripcion: 'Estado, cumplimiento promedio (=AVERAGE), metas y evidencias.' },
+  { id: 'x-evid', categoria: 'Seguimiento', tipo: 'excel', key: 'control_evidencias', titulo: 'Control de evidencias', descripcion: 'Seguimiento de archivo y % de verificación documental (=COUNTIF).' },
   // Evaluación
-  { id: 'w-inf', categoria: 'Evaluación', tipo: 'word', key: 'informe', titulo: 'Formato de informe de resultados', descripcion: 'Informe ejecutivo 2027 con métricas consolidadas y conclusiones.', codigo: 'TH-FBS-08' },
-  { id: 'w-mej', categoria: 'Evaluación', tipo: 'word', key: 'mejora', titulo: 'Formato de plan de mejora', descripcion: 'Acciones correctivas y preventivas derivadas de evaluaciones.', codigo: 'TH-FBS-09' },
-  { id: 'x-ind', categoria: 'Evaluación', tipo: 'excel', key: 'indicadores', titulo: 'Indicadores de cumplimiento del Plan de Bienestar', descripcion: 'Tablero integral de asistencia, satisfacción, presupuesto y dimensiones.', codigo: 'TH-IN-12' },
+  { id: 'w-inf', categoria: 'Evaluación', tipo: 'word', key: 'informe', titulo: 'Formato de informe de resultados', descripcion: 'Informe ejecutivo en blanco con indicadores y espacio de conclusiones.' },
+  { id: 'w-mej', categoria: 'Evaluación', tipo: 'word', key: 'mejora', titulo: 'Formato de plan de mejora', descripcion: 'Acciones correctivas y preventivas en blanco derivadas de evaluaciones.' },
+  { id: 'x-ind', categoria: 'Evaluación', tipo: 'excel', key: 'indicadores', titulo: 'Indicadores de cumplimiento del Plan de Bienestar', descripcion: 'Tablero integral en blanco de asistencia, satisfacción y ejecución.' },
   // Reconocimientos
-  { id: 'w-bonos', categoria: 'Reconocimientos', tipo: 'word', key: 'bonos', titulo: 'Formato de registro de entrega de bonos y reconocimientos', descripcion: 'Planilla de recibo firmado para bonos familiares y Trabajador del Mes.', codigo: 'TH-FBS-11' },
-  { id: 'x-bonos', categoria: 'Reconocimientos', tipo: 'excel', key: 'entrega_bonos', titulo: 'Control de entrega de bonos', descripcion: 'Control para los 10 trabajadores en junio y diciembre ($300.000 COP).', codigo: 'TH-CB-09' },
-  { id: 'x-tmes', categoria: 'Reconocimientos', tipo: 'excel', key: 'trabajador_mes', titulo: 'Registro de reconocimientos al trabajador del mes', descripcion: 'Control mensual Ene–Dic 2027 ($30.000/mes = $360.000 COP).', codigo: 'TH-TM-10' },
+  { id: 'w-bonos', categoria: 'Reconocimientos', tipo: 'word', key: 'bonos', titulo: 'Formato de registro de entrega de bonos y reconocimientos', descripcion: 'Planilla en blanco de recibo firmado para bonos familiares y Trabajador del Mes.' },
+  { id: 'x-bonos', categoria: 'Reconocimientos', tipo: 'excel', key: 'entrega_bonos', titulo: 'Control de entrega de bonos', descripcion: 'Planilla en blanco con fórmula automática de total entregado por trabajador.' },
+  { id: 'x-tmes', categoria: 'Reconocimientos', tipo: 'excel', key: 'trabajador_mes', titulo: 'Registro de reconocimientos al trabajador del mes', descripcion: 'Planilla anual en blanco Ene–Dic 2027 con suma automática.' },
 ];
 
 /**
@@ -180,7 +180,11 @@ export function FormatosDescargasView() {
   return (
     <div className="space-y-7">
       {/* Encabezado de Formatos Institucionales en Blanco + Botón ZIP */}
-      <section className="relative overflow-hidden rounded-2xl border-2 border-[#FACC15] bg-white p-6 sm:p-8 shadow-xs">
+      <section
+        data-submodule-surface="true"
+        data-piggy-context={`formatos:${selectedCategory}`}
+        className="relative overflow-hidden rounded-2xl border-2 border-[#FACC15] bg-white p-6 sm:p-8 shadow-xs"
+      >
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl space-y-1.5">
             <p className="text-xs font-extrabold tracking-wide text-[#D61F26]">
@@ -199,6 +203,7 @@ export function FormatosDescargasView() {
 
           <button
             type="button"
+            data-piggy-ignore="true"
             onClick={handleDownloadZip}
             disabled={loadingId !== null}
             className="inline-flex items-center gap-2.5 self-start rounded-xl bg-[#D61F26] border-b-4 border-[#FACC15] px-6 py-3.5 text-sm font-extrabold text-white shadow-md transition-all hover:bg-[#B3161C] hover:-translate-y-0.5 disabled:opacity-60 whitespace-nowrap shrink-0 cursor-pointer"
@@ -208,6 +213,17 @@ export function FormatosDescargasView() {
               ? 'EMPAQUETANDO TODOS LOS FORMATOS...'
               : 'Descargar todos los formatos (.ZIP)'}
           </button>
+        </div>
+
+        {/* Vista unificada de la Caja de Calidad institucional incluida en todos los formatos */}
+        <div className="mt-6 space-y-2 border-t border-slate-100 pt-5">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#0F294A]/70">
+            Caja de Calidad institucional uniforme incluida en todos los Word y Excel (campos de código, versión y fecha pendientes de asignación):
+          </p>
+          <InstitutionalQualityBox
+            empresa={state.planGeneral.empresa || 'Frikaz S.A.S.'}
+            tituloDocumento="FORMATO INSTITUCIONAL PLAN DE BIENESTAR SOCIAL LABORAL"
+          />
         </div>
 
         {/* Selector de actividad para formatos individuales (Ficha técnica y Encuesta en Word) */}
@@ -242,6 +258,7 @@ export function FormatosDescargasView() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
+            data-piggy-submodule="true"
             onClick={() => setSelectedCategory('TODAS')}
             className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-colors cursor-pointer ${
               selectedCategory === 'TODAS'
@@ -259,6 +276,7 @@ export function FormatosDescargasView() {
               <button
                 key={cat.id}
                 type="button"
+                data-piggy-submodule="true"
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors cursor-pointer ${
                   active
@@ -304,8 +322,8 @@ export function FormatosDescargasView() {
                     >
                       <div className="space-y-2.5">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-[11px] font-bold text-slate-500">
-                            {item.codigo}
+                          <span className="font-mono text-[11px] font-semibold text-slate-500">
+                            {item.categoria} · En blanco
                           </span>
                           <span
                             className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-mono text-[11px] font-extrabold ${
@@ -330,6 +348,7 @@ export function FormatosDescargasView() {
 
                       <button
                         type="button"
+                        data-piggy-ignore="true"
                         onClick={() => handleDownloadItem(item)}
                         disabled={loadingId !== null}
                         className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-colors disabled:opacity-60 cursor-pointer ${
@@ -373,6 +392,7 @@ export function FormatosDescargasView() {
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={handleBackupJson}
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-[#0F294A] hover:border-[#0F294A] cursor-pointer"
             >
@@ -381,6 +401,7 @@ export function FormatosDescargasView() {
             </button>
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={() => fileInputRef.current?.click()}
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-[#0F294A] hover:border-[#0F294A] cursor-pointer"
             >
@@ -396,6 +417,7 @@ export function FormatosDescargasView() {
             />
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={() => setConfirmResetOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2 text-xs font-bold text-[#0F294A] hover:bg-[#FDE047] cursor-pointer"
             >

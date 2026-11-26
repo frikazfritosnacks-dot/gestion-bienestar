@@ -63,7 +63,7 @@ export function ConveniosManager() {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
+      <section data-submodule-surface="true" className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-lg font-extrabold text-[#0F294A]">
             Convenios y Alianzas Institucionales
@@ -157,10 +157,12 @@ export function ConveniosManager() {
       </div>
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/45 p-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/45 p-4 pt-16 backdrop-blur-[1px]">
           <form
+            data-piggy-modal-surface="true"
+            data-piggy-context="convenios:modal"
             onSubmit={handleSubmit}
-            className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
+            className="max-h-[calc(100vh-5.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-display text-lg font-extrabold text-[#0F294A]">

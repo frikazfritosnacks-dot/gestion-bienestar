@@ -17,13 +17,19 @@ import {
   TerminoItem,
   WordSyncInfo,
 } from '../types/bienestar';
-import { INITIAL_BIENESTAR_STATE } from '../data/initialData';
 import {
+  CURRENT_MANUAL_CONTENT_VERSION,
+  INITIAL_BIENESTAR_STATE,
+} from '../data/initialData';
+import {
+  loadAppStateFromIndexedDB,
   loadRecordsFromIndexedDB,
   persistStateToIndexedDB,
 } from '../utils/bienestarDatabase';
 
 const STORAGE_KEY = 'frikaz_bienestar_social_v1';
+
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export function computeManualSyncHash(
   state: Pick<BienestarState, 'manual' | 'normograma' | 'terminologia' | 'matrizMeta' | 'proceso'>
@@ -49,33 +55,42 @@ interface ToastMessage {
   tone: 'success' | 'info' | 'warning';
 }
 
+interface MutationOptions {
+  silent?: boolean;
+}
+
 interface BienestarContextValue {
   state: BienestarState;
   isSaving: boolean;
+  saveStatus: SaveStatus;
+  saveError: string | null;
+  lastSavedAt: string | null;
+  retrySave: () => void;
   toasts: ToastMessage[];
   dismissToast: (id: string) => void;
   notify: (text: string, tone?: ToastMessage['tone']) => void;
   // Manual
-  updatePortada: (portada: ManualData['portada']) => void;
+  updatePortada: (portada: ManualData['portada'], opts?: MutationOptions) => void;
   updateManualField: (
     field: 'introduccion' | 'objetivoGeneral' | 'justificacion' | 'alcance',
-    value: string
+    value: string,
+    opts?: MutationOptions
   ) => void;
   addObjetivoEspecifico: (texto: string) => void;
-  updateObjetivoEspecifico: (id: string, texto: string) => void;
+  updateObjetivoEspecifico: (id: string, texto: string, opts?: MutationOptions) => void;
   deleteObjetivoEspecifico: (id: string) => void;
   // Normograma
   addNorma: (norma: Omit<NormaItem, 'id'>) => void;
-  updateNorma: (norma: NormaItem) => void;
+  updateNorma: (norma: NormaItem, opts?: MutationOptions) => void;
   deleteNorma: (id: string) => void;
   // Terminología
   addTermino: (termino: Omit<TerminoItem, 'id'>) => void;
-  updateTermino: (termino: TerminoItem) => void;
+  updateTermino: (termino: TerminoItem, opts?: MutationOptions) => void;
   deleteTermino: (id: string) => void;
   // Matriz & Flujograma
-  updateMatrizMeta: (meta: MatrizMetadata) => void;
+  updateMatrizMeta: (meta: MatrizMetadata, opts?: MutationOptions) => void;
   addProcessStep: (step: Omit<ProcessStep, 'id'>, insertAfterId?: string) => string;
-  updateProcessStep: (step: ProcessStep) => void;
+  updateProcessStep: (step: ProcessStep, opts?: MutationOptions) => void;
   deleteProcessStep: (id: string) => void;
   moveProcessStep: (id: string, direction: 'up' | 'down') => void;
   // Plan Anual de Bienestar & Presupuesto General 2027
@@ -254,18 +269,62 @@ function loadInitialState(): BienestarState {
         )
       : [];
 
+    const cachedVersion = parsed.manualContentVersion ?? 1;
+    const needsFullManualV2Upgrade = cachedVersion < 2;
+    const needsMatrizConciseV3Upgrade = cachedVersion < CURRENT_MANUAL_CONTENT_VERSION;
+
+    const initialStepMap = new Map(INITIAL_BIENESTAR_STATE.proceso.map((s) => [s.id, s]));
+    const upgradedProceso = needsFullManualV2Upgrade
+      ? INITIAL_BIENESTAR_STATE.proceso
+      : needsMatrizConciseV3Upgrade && Array.isArray(parsed.proceso)
+        ? parsed.proceso.map((step) => {
+            const initStep = initialStepMap.get(step.id);
+            if (!initStep) return step;
+            const desc = (step.descripcion || '').trim();
+            const isLegacyTemplate =
+              !desc ||
+              desc.startsWith('Consiste en ') ||
+              desc.includes('Pasos a seguir:') ||
+              desc.length < 110;
+            return isLegacyTemplate ? { ...step, descripcion: initStep.descripcion } : step;
+          })
+        : Array.isArray(parsed.proceso)
+          ? parsed.proceso
+          : INITIAL_BIENESTAR_STATE.proceso;
+
     const merged: BienestarState = {
       ...INITIAL_BIENESTAR_STATE,
       ...parsed,
-      manual: {
-        ...INITIAL_BIENESTAR_STATE.manual,
-        ...parsed.manual,
-        portada: {
-          ...INITIAL_BIENESTAR_STATE.manual.portada,
-          ...(parsed.manual?.portada || {}),
-          empresa: normalizeEmpresaName(parsed.manual?.portada?.empresa),
-        },
-      },
+      manualContentVersion: CURRENT_MANUAL_CONTENT_VERSION,
+      manual: needsFullManualV2Upgrade
+        ? {
+            ...INITIAL_BIENESTAR_STATE.manual,
+            portada: {
+              ...INITIAL_BIENESTAR_STATE.manual.portada,
+              ...(parsed.manual?.portada || {}),
+              empresa: normalizeEmpresaName(parsed.manual?.portada?.empresa),
+            },
+          }
+        : {
+            ...INITIAL_BIENESTAR_STATE.manual,
+            ...parsed.manual,
+            portada: {
+              ...INITIAL_BIENESTAR_STATE.manual.portada,
+              ...(parsed.manual?.portada || {}),
+              empresa: normalizeEmpresaName(parsed.manual?.portada?.empresa),
+            },
+          },
+      normograma: needsFullManualV2Upgrade
+        ? INITIAL_BIENESTAR_STATE.normograma
+        : Array.isArray(parsed.normograma)
+          ? parsed.normograma
+          : INITIAL_BIENESTAR_STATE.normograma,
+      terminologia: needsFullManualV2Upgrade
+        ? INITIAL_BIENESTAR_STATE.terminologia
+        : Array.isArray(parsed.terminologia)
+          ? parsed.terminologia
+          : INITIAL_BIENESTAR_STATE.terminologia,
+      proceso: upgradedProceso,
       matrizMeta: {
         ...INITIAL_BIENESTAR_STATE.matrizMeta,
         ...(parsed.matrizMeta || {}),
@@ -320,7 +379,7 @@ function loadInitialState(): BienestarState {
           ? parsed.convenios
           : INITIAL_BIENESTAR_STATE.convenios,
     };
-    if (!merged.wordSync) {
+    if (!merged.wordSync || needsMatrizConciseV3Upgrade) {
       merged.wordSync = {
         lastSyncedAt: merged.lastUpdated || new Date().toISOString(),
         lastSyncedHash: computeManualSyncHash(merged),
@@ -342,8 +401,12 @@ function loadInitialState(): BienestarState {
 
 export function BienestarProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<BienestarState>(loadInitialState);
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const isSaving = saveStatus === 'saving';
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -355,28 +418,48 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
       setToasts((prev) => [...prev.slice(-2), { id, text, tone }]);
       setTimeout(() => {
         dismissToast(id);
-      }, 3200);
+      }, 3600);
     },
     [dismissToast]
   );
 
   useEffect(() => {
     let cancelled = false;
-    loadRecordsFromIndexedDB().then((dbRecords) => {
-      if (cancelled || !dbRecords) return;
-      setState((prev) => {
-        const encIds = new Set(prev.respuestasEncuestas.map((r) => r.id));
-        const extraEnc = dbRecords.encuestas.filter((r) => !encIds.has(r.id));
-        const asistIds = new Set(prev.listasAsistencia.map((l) => l.id));
-        const extraAsist = dbRecords.asistencias.filter((l) => !asistIds.has(l.id));
-        if (extraEnc.length === 0 && extraAsist.length === 0) return prev;
-        return {
-          ...prev,
-          respuestasEncuestas: [...prev.respuestasEncuestas, ...extraEnc],
-          listasAsistencia: [...prev.listasAsistencia, ...extraAsist],
-        };
-      });
-    });
+    Promise.all([loadAppStateFromIndexedDB(), loadRecordsFromIndexedDB()]).then(
+      ([idbAppState, dbRecords]) => {
+        if (cancelled) return;
+        setState((prev) => {
+          let next = prev;
+          if (
+            idbAppState &&
+            idbAppState.manualContentVersion === CURRENT_MANUAL_CONTENT_VERSION &&
+            idbAppState.lastUpdated &&
+            prev.lastUpdated &&
+            new Date(idbAppState.lastUpdated).getTime() > new Date(prev.lastUpdated).getTime()
+          ) {
+            next = {
+              ...prev,
+              ...idbAppState,
+              manualContentVersion: CURRENT_MANUAL_CONTENT_VERSION,
+            };
+          }
+          if (dbRecords) {
+            const encIds = new Set(next.respuestasEncuestas.map((r) => r.id));
+            const extraEnc = dbRecords.encuestas.filter((r) => !encIds.has(r.id));
+            const asistIds = new Set(next.listasAsistencia.map((l) => l.id));
+            const extraAsist = dbRecords.asistencias.filter((l) => !asistIds.has(l.id));
+            if (extraEnc.length > 0 || extraAsist.length > 0) {
+              next = {
+                ...next,
+                respuestasEncuestas: [...next.respuestasEncuestas, ...extraEnc],
+                listasAsistencia: [...next.listasAsistencia, ...extraAsist],
+              };
+            }
+          }
+          return next;
+        });
+      }
+    );
     return () => {
       cancelled = true;
     };
@@ -386,6 +469,8 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
   latestStateRef.current = state;
   const saveTimerRef = useRef<number | null>(null);
   const isFirstRenderRef = useRef(true);
+  const saveSeqRef = useRef(0);
+  const lastErrorToastAtRef = useRef(0);
   const lastBudgetToastRef = useRef<{ itemId: string; at: number }>({ itemId: '', at: 0 });
   const lastBudgetHistoryRef = useRef<{ itemId: string; historyId: string; at: number }>({
     itemId: '',
@@ -393,30 +478,69 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     at: 0,
   });
 
-  const flushPersistence = useCallback((snapshot: BienestarState) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-    } catch {
-      // Storage quota fallback silently ignored if full
+  const flushPersistence = useCallback(
+    async (snapshot: BienestarState) => {
+      const seq = ++saveSeqRef.current;
+      let localOk = false;
+      let localErrMsg = '';
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        localOk = true;
+      } catch (err) {
+        localOk = false;
+        localErrMsg =
+          err instanceof Error && err.message
+            ? err.message
+            : 'No se pudo escribir en el almacenamiento local del navegador.';
+      }
+
+      const idbResult = await persistStateToIndexedDB(snapshot);
+      if (seq !== saveSeqRef.current) return;
+
+      const idbOk = !idbResult.available || idbResult.ok;
+      if (localOk && idbOk) {
+        setSaveStatus('saved');
+        setSaveError(null);
+        setLastSavedAt(new Date().toISOString());
+      } else {
+        const msg = !localOk
+          ? `No se pudieron guardar los cambios en el almacenamiento local (${localErrMsg}). Usa "Reintentar" para volver a guardar.`
+          : `Error al confirmar el respaldo persistente (${idbResult.error || 'IndexedDB'}). Usa "Reintentar".`;
+        setSaveStatus('error');
+        setSaveError(msg);
+        const now = Date.now();
+        if (now - lastErrorToastAtRef.current > 4000) {
+          lastErrorToastAtRef.current = now;
+          notify(msg, 'warning');
+        }
+      }
+    },
+    [notify]
+  );
+
+  const retrySave = useCallback(() => {
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
     }
-    void persistStateToIndexedDB(snapshot).finally(() => {
-      setIsSaving(false);
-    });
-  }, []);
+    setSaveStatus('saving');
+    void flushPersistence(latestStateRef.current);
+  }, [flushPersistence]);
 
   useEffect(() => {
     if (isFirstRenderRef.current) {
       isFirstRenderRef.current = false;
-      flushPersistence(state);
+      setSaveStatus('saving');
+      void flushPersistence(state);
       return;
     }
-    setIsSaving(true);
+    setSaveStatus('saving');
     if (saveTimerRef.current !== null) {
       window.clearTimeout(saveTimerRef.current);
     }
     saveTimerRef.current = window.setTimeout(() => {
       saveTimerRef.current = null;
-      flushPersistence(latestStateRef.current);
+      void flushPersistence(latestStateRef.current);
     }, 280);
 
     return () => {
@@ -436,7 +560,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(latestStateRef.current));
       } catch {
-        // Ignore quota errors on exit
+        // Handled by active save error feedback when app is open
       }
     };
     window.addEventListener('beforeunload', handleFlushOnExit);
@@ -454,25 +578,26 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     lastUpdated: new Date().toISOString(),
   });
 
-  const updatePortada = (portada: ManualData['portada']) => {
+  const updatePortada = (portada: ManualData['portada'], opts?: MutationOptions) => {
     setState((prev) =>
       touch(prev, {
         manual: { ...prev.manual, portada },
       })
     );
-    notify('Portada documental actualizada y guardada.');
+    if (!opts?.silent) notify('Portada documental actualizada y guardada.');
   };
 
   const updateManualField = (
     field: 'introduccion' | 'objetivoGeneral' | 'justificacion' | 'alcance',
-    value: string
+    value: string,
+    opts?: MutationOptions
   ) => {
     setState((prev) =>
       touch(prev, {
         manual: { ...prev.manual, [field]: value },
       })
     );
-    notify('Sección del manual guardada.');
+    if (!opts?.silent) notify('Sección del manual guardada.');
   };
 
   const addObjetivoEspecifico = (texto: string) => {
@@ -488,7 +613,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     notify('Objetivo específico agregado.');
   };
 
-  const updateObjetivoEspecifico = (id: string, texto: string) => {
+  const updateObjetivoEspecifico = (id: string, texto: string, opts?: MutationOptions) => {
     setState((prev) =>
       touch(prev, {
         manual: {
@@ -499,7 +624,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
         },
       })
     );
-    notify('Objetivo específico actualizado.');
+    if (!opts?.silent) notify('Objetivo específico actualizado.');
   };
 
   const deleteObjetivoEspecifico = (id: string) => {
@@ -533,13 +658,13 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     notify('Norma agregada al normograma.');
   };
 
-  const updateNorma = (norma: NormaItem) => {
+  const updateNorma = (norma: NormaItem, opts?: MutationOptions) => {
     setState((prev) =>
       touch(prev, {
         normograma: prev.normograma.map((n) => (n.id === norma.id ? norma : n)),
       })
     );
-    notify('Norma actualizada.');
+    if (!opts?.silent) notify('Norma actualizada.');
   };
 
   const deleteNorma = (id: string) => {
@@ -570,13 +695,13 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     notify('Término agregado al diccionario.');
   };
 
-  const updateTermino = (termino: TerminoItem) => {
+  const updateTermino = (termino: TerminoItem, opts?: MutationOptions) => {
     setState((prev) =>
       touch(prev, {
         terminologia: prev.terminologia.map((t) => (t.id === termino.id ? termino : t)),
       })
     );
-    notify('Término actualizado.');
+    if (!opts?.silent) notify('Término actualizado.');
   };
 
   const deleteTermino = (id: string) => {
@@ -588,9 +713,9 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     notify('Término eliminado del diccionario.', 'info');
   };
 
-  const updateMatrizMeta = (meta: MatrizMetadata) => {
+  const updateMatrizMeta = (meta: MatrizMetadata, opts?: MutationOptions) => {
     setState((prev) => touch(prev, { matrizMeta: meta }));
-    notify('Encabezado de la Matriz Detallada guardado.');
+    if (!opts?.silent) notify('Encabezado de la Matriz Detallada guardado.');
   };
 
   const addProcessStep = (step: Omit<ProcessStep, 'id'>, insertAfterId?: string) => {
@@ -627,13 +752,13 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     return id;
   };
 
-  const updateProcessStep = (step: ProcessStep) => {
+  const updateProcessStep = (step: ProcessStep, opts?: MutationOptions) => {
     setState((prev) =>
       touch(prev, {
         proceso: prev.proceso.map((s) => (s.id === step.id ? step : s)),
       })
     );
-    notify('Actividad actualizada en Matriz y Flujograma.');
+    if (!opts?.silent) notify('Actividad actualizada en Matriz y Flujograma.');
   };
 
   const deleteProcessStep = (id: string) => {
@@ -1286,8 +1411,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
 
   const resetToInitial = () => {
     setState(INITIAL_BIENESTAR_STATE);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_BIENESTAR_STATE));
-    notify('Información restablecida a los documentos originales.', 'info');
+    notify('Información restablecida a los documentos oficiales del Manual.', 'info');
   };
 
   const importState = (rawJson: string): boolean => {
@@ -1305,6 +1429,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
       setState({
         ...INITIAL_BIENESTAR_STATE,
         ...parsed,
+        manualContentVersion: CURRENT_MANUAL_CONTENT_VERSION,
       });
       notify('Respaldo importado correctamente.');
       return true;
@@ -1342,6 +1467,10 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
       value={{
         state,
         isSaving,
+        saveStatus,
+        saveError,
+        lastSavedAt,
+        retrySave,
         toasts,
         dismissToast,
         notify,

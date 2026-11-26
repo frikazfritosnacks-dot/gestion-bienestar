@@ -116,7 +116,7 @@ export function CronogramaGanttView() {
   return (
     <div className="space-y-6">
       {/* Encabezado de Cronograma 2027 + Exportaciones */}
-      <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
+      <section data-submodule-surface="true" className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-wide text-[#D61F26]">
             VIGENCIA OBLIGATORIA: ENERO A DICIEMBRE DE 2027 · 10 TRABAJADORES
@@ -132,6 +132,7 @@ export function CronogramaGanttView() {
         <div className="flex flex-wrap gap-2 shrink-0">
           <button
             type="button"
+            data-piggy-ignore="true"
             onClick={() => handleExportExcel('cronograma_anual')}
             disabled={exportingKey !== null}
             className="inline-flex items-center gap-1.5 rounded-xl bg-[#0F294A] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#D61F26] cursor-pointer"
@@ -141,6 +142,7 @@ export function CronogramaGanttView() {
           </button>
           <button
             type="button"
+            data-piggy-ignore="true"
             onClick={() => handleExportExcel('diagrama_gantt')}
             disabled={exportingKey !== null}
             className="inline-flex items-center gap-1.5 rounded-xl border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2 text-xs font-bold text-[#0F294A] hover:bg-[#FDE047] cursor-pointer"
@@ -420,8 +422,12 @@ export function CronogramaGanttView() {
 
       {/* Modal: Ver los 15 parámetros obligatorios de la actividad en el cronograma */}
       {inspecting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 backdrop-blur-[1px]">
-          <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 pt-16 backdrop-blur-[1px]">
+          <div
+            data-piggy-modal-surface="true"
+            data-piggy-context={`cronograma:inspect:${inspecting.id}`}
+            className="max-h-[calc(100vh-5.5rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
+          >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <p className="text-xs font-extrabold text-[#D61F26]">
@@ -470,10 +476,12 @@ export function CronogramaGanttView() {
 
       {/* Modal: Editar fechas 2027, meses del Gantt y parámetros de ejecución */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 pt-16 backdrop-blur-[1px]">
           <form
+            data-piggy-modal-surface="true"
+            data-piggy-context={`cronograma:edit:${editing.id}`}
             onSubmit={handleSaveSchedule}
-            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
+            className="max-h-[calc(100vh-5.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-display text-lg font-extrabold text-[#0F294A]">

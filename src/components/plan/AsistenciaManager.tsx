@@ -494,7 +494,7 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
   return (
     <div className="space-y-8">
       {/* Encabezado del módulo independiente */}
-      <section className="rounded-2xl border-2 border-[#0F294A]/15 bg-white p-6 shadow-xs space-y-2">
+      <section data-submodule-surface="true" className="rounded-2xl border-2 border-[#0F294A]/15 bg-white p-6 shadow-xs space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-extrabold tracking-wide text-[#D61F26]">
@@ -555,6 +555,7 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
           <div className="flex flex-wrap gap-3 lg:col-span-7 lg:justify-end">
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={handleDownloadBlankActivityTemplate}
               disabled={exporting}
               className="inline-flex items-center gap-2 rounded-xl bg-[#D61F26] border-b-2 border-[#FACC15] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#B3161C] cursor-pointer"
@@ -565,6 +566,7 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
 
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={handleDownloadGeneralBlankTemplate}
               disabled={exporting}
               className="inline-flex items-center gap-2 rounded-xl bg-[#0F294A] border-b-2 border-[#FACC15] px-4 py-2.5 text-xs font-bold text-[#FACC15] hover:bg-[#163A66] cursor-pointer"
@@ -894,6 +896,7 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
 
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={() => handleDownloadDiligenciada(activeDownloadLista)}
               disabled={exporting}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#D61F26] border-b-2 border-[#FACC15] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#B3161C] cursor-pointer"
@@ -904,6 +907,7 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
 
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={handleDownloadConsolidadoGeneral}
               disabled={exporting}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#0F294A] px-4 py-2.5 text-xs font-bold text-[#FACC15] hover:bg-[#163A66] cursor-pointer"
@@ -1153,8 +1157,12 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
 
       {/* Modal: Detalle de Lista Guardada */}
       {viewingLista && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 backdrop-blur-[1px]">
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 pt-16 backdrop-blur-[1px]">
+          <div
+            data-piggy-modal-surface="true"
+            data-piggy-context={`asistencia:detail:${viewingLista.id}`}
+            className="max-h-[calc(100vh-5.5rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5"
+          >
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div>
                 <p className="font-mono text-xs font-extrabold text-[#D61F26]">
@@ -1265,6 +1273,7 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
               </button>
               <button
                 type="button"
+                data-piggy-ignore="true"
                 onClick={() => handleDownloadDiligenciada(viewingLista)}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#D61F26] px-4 py-2 text-xs font-bold text-white hover:bg-[#B3161C] cursor-pointer"
               >
@@ -1285,8 +1294,10 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
 
       {/* Modal de Autorización PIN */}
       {authModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/55 p-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/55 p-4 pt-16 backdrop-blur-[1px]">
           <form
+            data-piggy-modal-surface="true"
+            data-piggy-context="asistencia:auth-pin"
             onSubmit={handleAuthorizeSubmit}
             className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
           >
@@ -1350,10 +1361,12 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
 
       {/* Modal de Corrección Autorizada */}
       {editingLista && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/55 p-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/55 p-4 pt-16 backdrop-blur-[1px]">
           <form
+            data-piggy-modal-surface="true"
+            data-piggy-context={`asistencia:edit:${editingLista.id}`}
             onSubmit={handleSaveAuthorizedEdit}
-            className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
+            className="max-h-[calc(100vh-5.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-display text-base font-extrabold text-[#0F294A]">

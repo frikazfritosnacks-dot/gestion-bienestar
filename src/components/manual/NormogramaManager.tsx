@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Search, Pencil, Trash2, Check, X, AlertCircle } from 'lucide-react';
 import { useBienestar } from '../../context/BienestarContext';
 import { JerarquiaNormativa, NormaItem } from '../../types/bienestar';
@@ -12,6 +12,25 @@ const JERARQUIAS: JerarquiaNormativa[] = [
   'Artículo',
   'Otra disposición',
 ];
+
+const FILTER_CATEGORIES = [
+  'Constitución',
+  'Ley',
+  'Decreto',
+  'Resolución',
+  'Artículo',
+  'Otras',
+] as const;
+
+function getNormCategory(jerarquia: string): (typeof FILTER_CATEGORIES)[number] {
+  const lower = jerarquia.trim().toLowerCase();
+  if (lower.startsWith('constituci')) return 'Constitución';
+  if (lower.startsWith('ley') || lower.includes('código sustantivo')) return 'Ley';
+  if (lower.startsWith('decreto')) return 'Decreto';
+  if (lower.startsWith('resoluci')) return 'Resolución';
+  if (lower.startsWith('art')) return 'Artículo';
+  return 'Otras';
+}
 
 const emptyForm = {
   jerarquia: 'Ley' as string,
@@ -30,16 +49,43 @@ export function NormogramaManager() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<NormaItem | null>(null);
+  const editOriginalRef = useRef<NormaItem | null>(null);
   const [editError, setEditError] = useState('');
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!editingId || !editForm) return;
+    if (
+      !editForm.jerarquia.trim() ||
+      !editForm.nombre.trim() ||
+      !editForm.afectacion.trim() ||
+      !editForm.queDebeHacer.trim()
+    ) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      updateNorma(
+        {
+          ...editForm,
+          jerarquia: editForm.jerarquia.trim(),
+          nombre: editForm.nombre.trim(),
+          afectacion: editForm.afectacion.trim(),
+          queDebeHacer: editForm.queDebeHacer.trim(),
+        },
+        { silent: true }
+      );
+    }, 350);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editForm, editingId]);
 
   const availableTypes = Array.from(
     new Set([...JERARQUIAS, ...state.normograma.map((n) => n.jerarquia)])
   );
 
   const filteredNormas = state.normograma.filter((n) => {
-    const matchesType = filterType === 'Todas' || n.jerarquia === filterType;
+    const matchesType = filterType === 'Todas' || getNormCategory(n.jerarquia) === filterType;
     const q = search.trim().toLowerCase();
     const matchesSearch =
       !q ||
@@ -75,6 +121,7 @@ export function NormogramaManager() {
   };
 
   const startEdit = (norma: NormaItem) => {
+    editOriginalRef.current = { ...norma };
     setEditingId(norma.id);
     setEditForm({ ...norma });
     setEditError('');
@@ -107,7 +154,10 @@ export function NormogramaManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <section
+        data-submodule-surface="true"
+        className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h2 className="text-lg font-bold text-[#0F294A]">
             Normograma Legal Institucional
@@ -122,22 +172,25 @@ export function NormogramaManager() {
         </div>
         <button
           type="button"
+          data-piggy-submodule="true"
           onClick={() => {
             setShowAddForm((v) => !v);
             setFormError('');
           }}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-4 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-[#B3161C] hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-4 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-[#B3161C] hover:-translate-y-0.5 whitespace-nowrap shrink-0 cursor-pointer"
         >
           <Plus className="h-4 w-4 text-[#FACC15]" />
           {showAddForm ? 'Cerrar formulario' : 'Agregar norma'}
         </button>
-      </div>
+      </section>
 
       {/* Formulario para agregar nueva norma */}
       {showAddForm && (
         <form
           onSubmit={handleCreate}
-          className="rounded-xl border border-[#FDE047] bg-[#FFFBEB] p-5 space-y-4"
+          data-submodule-surface="true"
+          data-piggy-priority="form"
+          className="mt-14 rounded-xl border border-[#FDE047] bg-[#FFFBEB] p-5 space-y-4"
         >
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-[#0F294A]">
@@ -257,21 +310,23 @@ export function NormogramaManager() {
           >
             Todas ({state.normograma.length})
           </button>
-          {availableTypes.map((type) => {
-            const count = state.normograma.filter((n) => n.jerarquia === type).length;
+          {FILTER_CATEGORIES.map((category) => {
+            const count = state.normograma.filter(
+              (n) => getNormCategory(n.jerarquia) === category
+            ).length;
             if (count === 0) return null;
             return (
               <button
-                key={type}
+                key={category}
                 type="button"
-                onClick={() => setFilterType(type)}
+                onClick={() => setFilterType(category)}
                 className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
-                  filterType === type
+                  filterType === category
                     ? 'bg-[#D61F26] text-white border-b border-[#FACC15] shadow-2xs'
                     : 'text-[#0F294A] hover:bg-[#FEF9C3]'
                 }`}
               >
-                {type} ({count})
+                {category} ({count})
               </button>
             );
           })}
@@ -388,6 +443,9 @@ export function NormogramaManager() {
                             <button
                               type="button"
                               onClick={() => {
+                                if (editOriginalRef.current) {
+                                  updateNorma(editOriginalRef.current, { silent: true });
+                                }
                                 setEditingId(null);
                                 setEditForm(null);
                                 setEditError('');

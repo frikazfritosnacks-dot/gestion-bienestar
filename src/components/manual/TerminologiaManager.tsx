@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus,
   Search,
@@ -26,8 +26,26 @@ export function TerminologiaManager() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<TerminoItem | null>(null);
+  const editOriginalRef = useRef<TerminoItem | null>(null);
   const [editError, setEditError] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!editingId || !editItem) return;
+    if (!editItem.termino.trim() || !editItem.definicion.trim()) return;
+    const timer = window.setTimeout(() => {
+      updateTermino(
+        {
+          ...editItem,
+          termino: editItem.termino.trim(),
+          definicion: editItem.definicion.trim(),
+        },
+        { silent: true }
+      );
+    }, 350);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editItem, editingId]);
 
   const displayedTerms = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -79,7 +97,10 @@ export function TerminologiaManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <section
+        data-submodule-surface="true"
+        className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h2 className="text-lg font-bold text-[#0F294A]">
             Terminología y Diccionario de Bienestar
@@ -95,21 +116,24 @@ export function TerminologiaManager() {
 
         <button
           type="button"
+          data-piggy-submodule="true"
           onClick={() => {
             setShowAdd((v) => !v);
             setFormError('');
           }}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-4 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-[#B3161C] hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-4 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-[#B3161C] hover:-translate-y-0.5 whitespace-nowrap shrink-0 cursor-pointer"
         >
           <Plus className="h-4 w-4 text-[#FACC15]" />
           {showAdd ? 'Cerrar formulario' : 'Agregar término'}
         </button>
-      </div>
+      </section>
 
       {showAdd && (
         <form
           onSubmit={handleAdd}
-          className="rounded-xl border border-[#FDE047] bg-[#FFFBEB] p-5 space-y-4"
+          data-submodule-surface="true"
+          data-piggy-priority="form"
+          className="mt-14 rounded-xl border border-[#FDE047] bg-[#FFFBEB] p-5 space-y-4"
         >
           <h3 className="text-sm font-bold text-[#0F294A]">Nuevo concepto del diccionario</h3>
 
@@ -261,6 +285,9 @@ export function TerminologiaManager() {
                       <button
                         type="button"
                         onClick={() => {
+                          if (editOriginalRef.current) {
+                            updateTermino(editOriginalRef.current, { silent: true });
+                          }
                           setEditingId(null);
                           setEditItem(null);
                           setEditError('');
@@ -298,6 +325,7 @@ export function TerminologiaManager() {
                         <button
                           type="button"
                           onClick={() => {
+                            editOriginalRef.current = { ...item };
                             setEditingId(item.id);
                             setEditItem({ ...item });
                             setEditError('');

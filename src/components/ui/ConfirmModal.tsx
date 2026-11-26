@@ -23,6 +23,7 @@ export function ConfirmModal({
 
   return (
     <div
+      data-piggy-modal-ignore="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 p-4 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"

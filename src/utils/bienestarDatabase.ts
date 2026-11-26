@@ -45,13 +45,31 @@ function txPromise<T>(req: IDBRequest<T>): Promise<T | null> {
   });
 }
 
+export interface IndexedDBWriteResult {
+  ok: boolean;
+  available: boolean;
+  error?: string;
+}
+
 /**
  * Persiste el estado integral y sincroniza las colecciones independientes de
  * Encuestas y Listas de Asistencia en IndexedDB para almacenamiento durable.
  */
-export async function persistStateToIndexedDB(state: BienestarState): Promise<void> {
+export async function persistStateToIndexedDB(
+  state: BienestarState
+): Promise<IndexedDBWriteResult> {
+  if (typeof indexedDB === 'undefined') {
+    return { ok: true, available: false };
+  }
+
   const db = await openDatabase();
-  if (!db) return;
+  if (!db) {
+    return {
+      ok: false,
+      available: true,
+      error: 'No fue posible abrir el almacenamiento persistente (IndexedDB).',
+    };
+  }
 
   try {
     const tx = db.transaction(
@@ -72,12 +90,44 @@ export async function persistStateToIndexedDB(state: BienestarState): Promise<vo
       asistStore.put(lista);
     }
 
-    await new Promise<void>((resolve) => {
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => resolve();
+    return await new Promise<IndexedDBWriteResult>((resolve) => {
+      tx.oncomplete = () => resolve({ ok: true, available: true });
+      tx.onerror = () =>
+        resolve({
+          ok: false,
+          available: true,
+          error: tx.error?.message || 'Error al escribir en IndexedDB.',
+        });
+      tx.onabort = () =>
+        resolve({
+          ok: false,
+          available: true,
+          error: tx.error?.message || 'La escritura en IndexedDB fue cancelada.',
+        });
     });
+  } catch (err) {
+    return {
+      ok: false,
+      available: true,
+      error: err instanceof Error ? err.message : 'Error inesperado al persistir en IndexedDB.',
+    };
+  } finally {
+    db.close();
+  }
+}
+
+export async function loadAppStateFromIndexedDB(): Promise<BienestarState | null> {
+  const db = await openDatabase();
+  if (!db) return null;
+
+  try {
+    const tx = db.transaction([STORE_APP], 'readonly');
+    const record = await txPromise<{ key: string; value?: BienestarState } | undefined>(
+      tx.objectStore(STORE_APP).get('main')
+    );
+    return record?.value ?? null;
   } catch {
-    // Fallback silencioso a localStorage
+    return null;
   } finally {
     db.close();
   }

@@ -83,6 +83,7 @@ export function ActividadFichaDetail({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
+          data-piggy-submodule="true"
           onClick={onBack}
           className="inline-flex items-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-[#0F294A] transition-colors hover:border-[#0F294A] hover:bg-slate-50 cursor-pointer"
         >
@@ -93,6 +94,7 @@ export function ActividadFichaDetail({
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
+            data-piggy-submodule="true"
             onClick={() => onOpenEncuesta(actividad.id)}
             className="inline-flex items-center gap-1.5 rounded-xl border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2 text-xs font-bold text-[#0F294A] hover:bg-[#FDE047] cursor-pointer"
           >
@@ -101,6 +103,7 @@ export function ActividadFichaDetail({
           </button>
           <button
             type="button"
+            data-piggy-submodule="true"
             onClick={() => onOpenAsistencia(actividad.id)}
             className="inline-flex items-center gap-1.5 rounded-xl border border-[#0F294A]/20 bg-[#EFF6FF] px-3.5 py-2 text-xs font-bold text-[#0F294A] hover:bg-[#DBEAFE] cursor-pointer"
           >
@@ -122,7 +125,11 @@ export function ActividadFichaDetail({
       </div>
 
       {/* Encabezado principal de la ficha (1. Nombre, 2. Dimensión, Estado y Frecuencia) */}
-      <section className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
+      <section
+        data-submodule-surface="true"
+        data-piggy-context={`ficha:${actividad.id}`}
+        className="mt-14 relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs"
+      >
         <div className="absolute inset-x-0 top-0 flex h-2">
           <div className="w-2/3 bg-[#D61F26]" />
           <div className="w-1/3 bg-[#FACC15]" />
@@ -361,6 +368,7 @@ export function ActividadFichaDetail({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-1">
               <button
                 type="button"
+                data-piggy-submodule="true"
                 onClick={() => onOpenEncuesta(actividad.id)}
                 className="flex flex-col justify-between rounded-xl border border-[#FACC15] bg-[#FFFBEB] p-3.5 text-left transition-colors hover:bg-[#FEF9C3] cursor-pointer"
               >
@@ -376,6 +384,7 @@ export function ActividadFichaDetail({
 
               <button
                 type="button"
+                data-piggy-submodule="true"
                 onClick={() => onOpenAsistencia(actividad.id)}
                 className="flex flex-col justify-between rounded-xl border border-[#0F294A]/20 bg-[#EFF6FF] p-3.5 text-left transition-colors hover:bg-[#DBEAFE] cursor-pointer"
               >
@@ -393,10 +402,12 @@ export function ActividadFichaDetail({
 
       {/* Modal limpio de edición completa */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 pt-16 backdrop-blur-[1px]">
           <form
+            data-piggy-modal-surface="true"
+            data-piggy-context={`ficha:edit:${actividad.id}`}
             onSubmit={handleSave}
-            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
+            className="max-h-[calc(100vh-5.5rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-display text-lg font-extrabold text-[#0F294A]">

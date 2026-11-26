@@ -155,7 +155,7 @@ export function ProgramasBienestarSection({
   return (
     <div className="space-y-8">
       {/* Encabezado limpio y espacioso del módulo */}
-      <section className="relative overflow-hidden rounded-2xl border border-[#FCA5A5] bg-white p-6 sm:p-8 shadow-xs">
+      <section data-module-surface="true" className="relative overflow-hidden rounded-2xl border border-[#FCA5A5] bg-white p-6 sm:p-8 shadow-xs">
         <div className="absolute inset-x-0 top-0 flex h-2">
           <div className="w-2/3 bg-[#D61F26]" />
           <div className="w-1/3 bg-[#FACC15]" />
@@ -184,7 +184,7 @@ export function ProgramasBienestarSection({
         aria-label="Subapartados del Plan Anual de Bienestar"
         className="overflow-x-auto pb-1"
       >
-        <div className="inline-flex min-w-full items-center gap-1.5 rounded-2xl border border-slate-200 bg-white p-2">
+        <div role="tablist" className="inline-flex min-w-full items-center gap-1.5 rounded-2xl border border-slate-200 bg-white p-2">
           {SUB_TABS.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -192,6 +192,9 @@ export function ProgramasBienestarSection({
               <button
                 key={tab.id}
                 type="button"
+                role="tab"
+                aria-selected={active}
+                data-piggy-submodule="true"
                 onClick={() => {
                   setActiveTab(tab.id);
                   setSelectedActividadId(null);
@@ -210,10 +213,15 @@ export function ProgramasBienestarSection({
         </div>
       </nav>
 
+      <div className="pt-16 sm:pt-20">
       {/* SUBPÁGINA A: INFORMACIÓN GENERAL DEL PLAN Y 8 DIMENSIONES */}
       {activeTab === 'general' && (
         <div className="space-y-8">
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 space-y-6">
+          <section
+            data-submodule-surface="true"
+            data-piggy-context="programas:general"
+            className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 space-y-6"
+          >
             <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="font-display text-xl font-extrabold text-[#0F294A]">
@@ -307,7 +315,7 @@ export function ProgramasBienestarSection({
                   <button
                     key={dim.id}
                     type="button"
-                    data-piggy-target="true"
+                    data-piggy-submodule="true"
                     onClick={() => handleSelectDimension(dim.id)}
                     className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-[#D61F26] hover:-translate-y-0.5 hover:shadow-sm cursor-pointer"
                   >
@@ -351,7 +359,11 @@ export function ProgramasBienestarSection({
           ) : (
             <div className="space-y-6">
               {/* Filtro limpio de las 8 dimensiones */}
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+              <section
+                data-submodule-surface="true"
+                data-piggy-context={`programas:dimension:${selectedDimension}`}
+                className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4"
+              >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="font-display text-lg font-extrabold text-[#0F294A]">
@@ -366,6 +378,7 @@ export function ProgramasBienestarSection({
                   {selectedDimension !== 'ALL' && (
                     <button
                       type="button"
+                      data-piggy-submodule="true"
                       onClick={() => setSelectedDimension('ALL')}
                       className="self-start rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-[#0F294A] hover:bg-slate-50 cursor-pointer"
                     >
@@ -377,6 +390,7 @@ export function ProgramasBienestarSection({
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
+                    data-piggy-submodule="true"
                     onClick={() => setSelectedDimension('ALL')}
                     className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
                       selectedDimension === 'ALL'
@@ -390,6 +404,7 @@ export function ProgramasBienestarSection({
                     <button
                       key={dim.id}
                       type="button"
+                      data-piggy-submodule="true"
                       onClick={() => setSelectedDimension(dim.id)}
                       className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
                         selectedDimension === dim.id
@@ -463,7 +478,7 @@ export function ProgramasBienestarSection({
 
                         <button
                           type="button"
-                          data-piggy-target="true"
+                          data-piggy-submodule="true"
                           onClick={() => setSelectedActividadId(act.id)}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0F294A] px-4 py-2.5 text-xs font-bold text-[#FACC15] transition-colors hover:bg-[#D61F26] hover:text-white cursor-pointer"
                         >
@@ -509,17 +524,20 @@ export function ProgramasBienestarSection({
 
       {/* SUBPÁGINA I: FORMATOS INSTITUCIONALES EN BLANCO (12 WORD + 12 EXCEL + ZIP) */}
       {activeTab === 'formatos' && <FormatosDescargasView />}
+      </div>
 
       {/* Modal de edición de Información General del Plan */}
       {editingPlanGeneral && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/45 p-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/45 p-4 pt-16 backdrop-blur-[1px]">
           <form
+            data-piggy-modal-surface="true"
+            data-piggy-context="programas:edit-general"
             onSubmit={(e) => {
               e.preventDefault();
               updatePlanGeneral(generalDraft);
               setEditingPlanGeneral(false);
             }}
-            className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
+            className="max-h-[calc(100vh-5.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-display text-lg font-extrabold text-[#0F294A]">

@@ -242,7 +242,11 @@ export function RegistroEncuestasView() {
   return (
     <div className="space-y-6">
       {/* Encabezado del apartado independiente */}
-      <section className="rounded-2xl border-2 border-[#0F294A]/15 bg-white p-6 shadow-xs space-y-5">
+      <section
+        data-submodule-surface="true"
+        data-piggy-context={`reg-encuestas:${viewMode}`}
+        className="rounded-2xl border-2 border-[#0F294A]/15 bg-white p-6 shadow-xs space-y-5"
+      >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-extrabold tracking-wide text-[#D61F26]">
@@ -262,6 +266,7 @@ export function RegistroEncuestasView() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={() => handleDownloadExcel('todas')}
               disabled={exporting}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#D61F26] border-b-2 border-[#FACC15] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#B3161C] cursor-pointer"
@@ -271,6 +276,7 @@ export function RegistroEncuestasView() {
             </button>
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={() => handleDownloadExcel('filtradas')}
               disabled={exporting}
               className="inline-flex items-center gap-1.5 rounded-xl border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2.5 text-xs font-bold text-[#0F294A] hover:bg-[#FDE047] cursor-pointer"
@@ -280,6 +286,7 @@ export function RegistroEncuestasView() {
             </button>
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={() => handleDownloadExcel('consolidado')}
               disabled={exporting}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#0F294A] px-3.5 py-2.5 text-xs font-bold text-[#FACC15] hover:bg-[#163A66] cursor-pointer"
@@ -400,6 +407,7 @@ export function RegistroEncuestasView() {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
+          data-piggy-submodule="true"
           onClick={() => setViewMode('listado')}
           className={`rounded-xl px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
             viewMode === 'listado'
@@ -411,6 +419,7 @@ export function RegistroEncuestasView() {
         </button>
         <button
           type="button"
+          data-piggy-submodule="true"
           onClick={() => setViewMode('porActividad')}
           className={`rounded-xl px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
             viewMode === 'porActividad'
@@ -422,6 +431,7 @@ export function RegistroEncuestasView() {
         </button>
         <button
           type="button"
+          data-piggy-submodule="true"
           onClick={() => setViewMode('consolidado')}
           className={`rounded-xl px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
             viewMode === 'consolidado'
@@ -704,8 +714,12 @@ export function RegistroEncuestasView() {
 
       {/* Modal: Vista individual completa de una respuesta */}
       {selectedRecord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 backdrop-blur-[1px]">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 pt-16 backdrop-blur-[1px]">
+          <div
+            data-piggy-modal-surface="true"
+            data-piggy-context={`reg-encuestas:detail:${selectedRecord.id}`}
+            className="max-h-[calc(100vh-5.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5"
+          >
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div>
                 <p className="font-mono text-xs font-extrabold text-[#D61F26]">
@@ -820,8 +834,10 @@ export function RegistroEncuestasView() {
 
       {/* Modal de verificación de autorización para corrección */}
       {authPinModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/55 p-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/55 p-4 pt-16 backdrop-blur-[1px]">
           <form
+            data-piggy-modal-surface="true"
+            data-piggy-context="reg-encuestas:auth-pin"
             onSubmit={confirmAuthorization}
             className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
           >
@@ -882,10 +898,12 @@ export function RegistroEncuestasView() {
 
       {/* Modal de corrección autorizada */}
       {editingRecord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/55 p-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/55 p-4 pt-16 backdrop-blur-[1px]">
           <form
+            data-piggy-modal-surface="true"
+            data-piggy-context={`reg-encuestas:edit:${editingRecord.id}`}
             onSubmit={saveAuthorizedCorrection}
-            className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
+            className="max-h-[calc(100vh-5.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-display text-base font-extrabold text-[#0F294A]">

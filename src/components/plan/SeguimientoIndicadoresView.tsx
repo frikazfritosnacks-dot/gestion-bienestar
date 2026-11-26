@@ -170,7 +170,7 @@ export function SeguimientoIndicadoresView() {
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
+      <section data-submodule-surface="true" className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1 max-w-2xl">
           <p className="text-xs font-extrabold uppercase tracking-wide text-[#D61F26]">
             INDICADORES REALES SIN DATOS SIMULADOS · VIGENCIA 2027
@@ -400,10 +400,12 @@ export function SeguimientoIndicadoresView() {
 
       {/* Modal de registro de seguimiento */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 pt-16 backdrop-blur-[1px]">
           <form
+            data-piggy-modal-surface="true"
+            data-piggy-context="seguimiento:new-modal"
             onSubmit={handleSubmit}
-            className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
+            className="max-h-[calc(100vh-5.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-display text-lg font-extrabold text-[#0F294A]">

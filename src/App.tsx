@@ -10,6 +10,7 @@ import {
   Home,
   Info,
   Menu,
+  RefreshCw,
   Sparkles,
   X,
 } from 'lucide-react';
@@ -57,7 +58,15 @@ const SECTION_TITLES: Record<SectionId, string> = {
 };
 
 function AppShell() {
-  const { state, isSaving, toasts, dismissToast } = useBienestar();
+  const {
+    state,
+    saveStatus,
+    saveError,
+    lastSavedAt,
+    retrySave,
+    toasts,
+    dismissToast,
+  } = useBienestar();
   const [showCover, setShowCover] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionId>('inicio');
   const [manualSubTab, setManualSubTab] = useState<ManualSubSectionId>('introduccion');
@@ -67,6 +76,9 @@ function AppShell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleNavigate = (section: SectionId, tab?: ManualSubSectionId) => {
+    if (section !== activeSection && typeof window !== 'undefined' && window.scrollY > 80) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     setActiveSection(section);
     if (tab) setManualSubTab(tab);
     setMobileMenuOpen(false);
@@ -78,17 +90,31 @@ function AppShell() {
     tab?: ManualSubSectionId
   ) => {
     setMobileMenuOpen(false);
+    if (section !== activeSection && typeof window !== 'undefined' && window.scrollY > 80) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     setActiveSection(section);
     if (tab) setManualSubTab(tab);
     requestPiggyWalkAndNavigate(e.currentTarget);
   };
 
+  const activeRouteKey =
+    activeSection === 'manual'
+      ? `manual:${manualSubTab}`
+      : activeSection === 'programas'
+        ? `programas:${programasSubTab}:${programasDimension}:${programasActividadId ?? 'list'}`
+        : activeSection;
+
   return (
     <MotionConfig reducedMotion="user">
-      {/* Animación global de papitas saltando desde los botones */}
-      <ChipButtonBurstOverlay />
+      <div className="relative min-h-screen">
+        {/* Animación global de papitas saltando desde los botones */}
+        <ChipButtonBurstOverlay />
 
-      <AnimatePresence mode="wait">
+        {/* Cerdito oficial anclado al documento: camina al módulo seleccionado, se sienta y permanece allí */}
+        {!showCover && <WalkingPiggyCompanion activeContextKey={activeRouteKey} />}
+
+        <AnimatePresence mode="wait">
         {showCover ? (
           <motion.div
             key="cover-portada"
@@ -114,9 +140,6 @@ function AppShell() {
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             className="min-h-screen bg-[#F8FAFC] text-[#0F294A] flex flex-col"
           >
-            {/* Cerdito oficial caminando automáticamente con huellas que desaparecen */}
-            <WalkingPiggyCompanion />
-
             {/* Menú principal único sin duplicaciones */}
             <header className="sticky top-0 z-30 border-b-2 border-[#FACC15] bg-white/95 backdrop-blur-xs">
               <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
@@ -179,16 +202,44 @@ function AppShell() {
                   })}
                 </nav>
 
-                {/* Botón de portada, estado de guardado y menú móvil */}
+                {/* Botón de portada, estado real de guardado y menú móvil */}
                 <div className="flex items-center gap-2 shrink-0">
-                  {isSaving && (
+                  {saveStatus === 'saving' && (
                     <span
+                      data-save-status="saving"
                       aria-live="polite"
-                      className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-900 whitespace-nowrap"
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-[#D61F26] animate-pulse" />
                       Guardando...
                     </span>
+                  )}
+                  {saveStatus === 'saved' && (
+                    <span
+                      data-save-status="saved"
+                      aria-live="polite"
+                      title={
+                        lastSavedAt
+                          ? `Último guardado confirmado: ${new Date(lastSavedAt).toLocaleTimeString('es-CO')}`
+                          : 'Guardado confirmado'
+                      }
+                      className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 whitespace-nowrap"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                      Guardado automático
+                    </span>
+                  )}
+                  {saveStatus === 'error' && (
+                    <button
+                      type="button"
+                      data-save-status="error"
+                      data-piggy-ignore="true"
+                      onClick={retrySave}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-2.5 py-1 text-[11px] font-bold text-[#D61F26] hover:bg-[#FEE2E2] whitespace-nowrap cursor-pointer"
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span>Error al guardar · Reintentar</span>
+                    </button>
                   )}
 
                   <button
@@ -212,9 +263,33 @@ function AppShell() {
               </div>
             </header>
 
+            {saveStatus === 'error' && saveError && (
+              <div
+                role="alert"
+                data-save-error-banner="true"
+                className="border-b border-[#FCA5A5] bg-[#FEF2F2] px-4 py-2.5 text-xs text-[#991B1B]"
+              >
+                <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-[#D61F26]" />
+                    <span>{saveError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    data-piggy-ignore="true"
+                    onClick={retrySave}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#D61F26] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#B3161C] cursor-pointer"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Reintentar
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Drawer móvil */}
             {mobileMenuOpen && (
-              <div className="fixed inset-0 z-50 flex justify-end lg:hidden">
+              <div data-mobile-drawer="true" className="fixed inset-0 z-50 flex justify-end lg:hidden">
                 <div
                   className="fixed inset-0 bg-[#0F294A]/40 backdrop-blur-[1px]"
                   onClick={() => setMobileMenuOpen(false)}
@@ -265,9 +340,9 @@ function AppShell() {
             )}
 
             {/* Espacio de trabajo dedicado del módulo activo */}
-            <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-7 sm:px-6 lg:px-10">
+            <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-11 pb-8 sm:px-6 sm:pt-14 lg:px-10">
               {activeSection !== 'inicio' && (
-                <div className="mb-6">
+                <div className="mb-8 sm:mb-10">
                   <button
                     type="button"
                     data-piggy-walk-nav="true"
@@ -364,6 +439,7 @@ function AppShell() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </MotionConfig>
   );
 }

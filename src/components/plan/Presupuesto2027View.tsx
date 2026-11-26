@@ -189,7 +189,7 @@ export function Presupuesto2027View() {
   return (
     <div className="space-y-7">
       {/* Encabezado de sección, estado oficial de la propuesta y descargas */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 space-y-5">
+      <section data-submodule-surface="true" className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 space-y-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1.5 max-w-2xl">
             <p className="text-xs font-extrabold uppercase tracking-wide text-[#D61F26]">
@@ -225,6 +225,7 @@ export function Presupuesto2027View() {
             </button>
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={() => handleExport('presupuesto_general')}
               disabled={exportingKey !== null}
               className="inline-flex items-center gap-2 rounded-xl bg-[#0F294A] border-b-2 border-[#FACC15] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#D61F26] cursor-pointer"
@@ -236,6 +237,7 @@ export function Presupuesto2027View() {
             </button>
             <button
               type="button"
+              data-piggy-ignore="true"
               onClick={() => handleExport('desglose_presupuestal')}
               disabled={exportingKey !== null}
               className="inline-flex items-center gap-2 rounded-xl border border-[#FACC15] bg-[#FEF9C3] px-4 py-2.5 text-xs font-bold text-[#0F294A] hover:bg-[#FDE047] cursor-pointer"
@@ -740,8 +742,11 @@ export function Presupuesto2027View() {
 
                     {addingForActId === act.id ? (
                       <form
+                        data-submodule-surface="true"
+                        data-piggy-priority="form"
+                        data-piggy-context={`presupuesto:add:${act.id}`}
                         onSubmit={(e) => handleAddItemSubmit(e, act.id)}
-                        className="rounded-xl border border-[#FDE047] bg-[#FFFBEB] p-4 space-y-3"
+                        className="mt-14 rounded-xl border border-[#FDE047] bg-[#FFFBEB] p-4 space-y-3"
                       >
                         <p className="text-xs font-extrabold text-[#0F294A]">
                           Nuevo recurso o material para {act.actividad}
@@ -867,8 +872,12 @@ export function Presupuesto2027View() {
 
       {/* Modal de Revisión y Aprobación por Gerencia */}
       {reviewOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 backdrop-blur-[1px]">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F294A]/50 p-4 pt-16 backdrop-blur-[1px]">
+          <div
+            data-piggy-modal-surface="true"
+            data-piggy-context="presupuesto:review-modal"
+            className="max-h-[calc(100vh-5.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
+          >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#D61F26]">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Plus,
   Search,
@@ -10,18 +10,13 @@ import {
   ArrowDown,
   GitFork,
   AlertCircle,
-  FileDown,
 } from 'lucide-react';
 import { useBienestar } from '../../context/BienestarContext';
 import { FlowchartSymbol, ProcessStep } from '../../types/bienestar';
 import { SYMBOL_LABELS, SymbolGraphic } from '../ui/SymbolGraphic';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import { ChipSvg } from '../ui/ChipGraphics';
-import {
-  buildMatrizWordFilename,
-  downloadManualMatrizFlujogramaThreeWord,
-  generateMatrizWordBlob,
-} from '../../utils/wordManualGenerator';
+import { InstitutionalQualityBox } from '../ui/InstitutionalQualityBox';
 
 interface MatrizDetalladaSectionProps {
   onOpenFlowchart: () => void;
@@ -47,49 +42,33 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
     updateProcessStep,
     deleteProcessStep,
     moveProcessStep,
-    notify,
   } = useBienestar();
-
-  const [downloadingMatrizWord, setDownloadingMatrizWord] = useState(false);
-  const [downloadingThreeWord, setDownloadingThreeWord] = useState(false);
-
-  const handleDownloadMatrizWord = async () => {
-    if (downloadingMatrizWord) return;
-    setDownloadingMatrizWord(true);
-    try {
-      const blob = await generateMatrizWordBlob(state);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = buildMatrizWordFilename(state);
-      a.click();
-      URL.revokeObjectURL(url);
-      notify('Matriz Detallada descargada en Word (.docx).');
-    } catch {
-      notify('No fue posible generar la Matriz Detallada en Word. Inténtalo de nuevo.', 'warning');
-    } finally {
-      setDownloadingMatrizWord(false);
-    }
-  };
-
-  const handleDownloadThreeWord = async () => {
-    if (downloadingThreeWord) return;
-    setDownloadingThreeWord(true);
-    try {
-      await downloadManualMatrizFlujogramaThreeWord(state);
-      notify('Descargados los 3 archivos Word independientes: Manual, Matriz y Flujograma.');
-    } catch {
-      notify('No fue posible generar los 3 archivos Word. Inténtalo nuevamente.', 'warning');
-    } finally {
-      setDownloadingThreeWord(false);
-    }
-  };
 
   const [editingMeta, setEditingMeta] = useState(false);
   const [metaForm, setMetaForm] = useState(state.matrizMeta);
+  const metaOriginalRef = useRef(state.matrizMeta);
+
   useEffect(() => {
-    setMetaForm(state.matrizMeta);
-  }, [state.matrizMeta]);
+    if (!editingMeta) {
+      setMetaForm(state.matrizMeta);
+    }
+  }, [state.matrizMeta, editingMeta]);
+
+  useEffect(() => {
+    if (!editingMeta) return;
+    if (
+      !metaForm.empresa.trim() ||
+      !metaForm.responsable.trim() ||
+      !metaForm.objetivo.trim()
+    ) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      updateMatrizMeta(metaForm, { silent: true });
+    }, 350);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metaForm, editingMeta]);
 
   const [search, setSearch] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -98,9 +77,40 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStep, setEditStep] = useState<ProcessStep | null>(null);
+  const editStepOriginalRef = useRef<ProcessStep | null>(null);
   const [editError, setEditError] = useState('');
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!editingId || !editStep) return;
+    if (
+      !editStep.actividad.trim() ||
+      !editStep.descripcion.trim() ||
+      !editStep.responsable.trim() ||
+      !editStep.registroDocumento.trim()
+    ) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      const isDiamond = editStep.symbol === 'diamond';
+      updateProcessStep(
+        {
+          ...editStep,
+          actividad: editStep.actividad.trim(),
+          descripcion: editStep.descripcion.trim(),
+          responsable: editStep.responsable.trim(),
+          registroDocumento: editStep.registroDocumento.trim(),
+          isDecision: isDiamond,
+          yesLabel: isDiamond ? editStep.yesLabel || 'SÍ' : editStep.yesLabel,
+          noLabel: isDiamond ? editStep.noLabel || 'NO' : editStep.noLabel,
+        },
+        { silent: true }
+      );
+    }, 350);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editStep, editingId]);
 
   const filteredSteps = state.proceso.filter((step) => {
     const q = search.trim().toLowerCase();
@@ -177,7 +187,7 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
   return (
     <div className="space-y-6">
       {/* Encabezado de identificación de la matriz */}
-      <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <section data-module-surface="true" className="rounded-xl border border-slate-200 bg-white overflow-hidden">
         <div className="flex flex-col gap-3 border-b-2 border-[#FACC15] bg-[#FFFBEB] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -196,24 +206,8 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={handleDownloadMatrizWord}
-              disabled={downloadingMatrizWord || downloadingThreeWord}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0F294A] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-bold text-white transition-all duration-150 hover:bg-[#D61F26] whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <FileDown className="h-3.5 w-3.5 text-[#FACC15]" />
-              {downloadingMatrizWord ? 'Generando...' : 'Descargar Matriz (.docx)'}
-            </button>
-            <button
-              type="button"
-              onClick={handleDownloadThreeWord}
-              disabled={downloadingMatrizWord || downloadingThreeWord}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-3.5 py-2 text-xs font-bold text-white transition-all duration-150 hover:bg-[#B3161C] whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <FileDown className="h-3.5 w-3.5 text-[#FACC15]" />
-              {downloadingThreeWord ? 'Generando 3 Word...' : 'Descargar 3 Word'}
-            </button>
-            <button
-              type="button"
+              data-piggy-section-nav="true"
+              data-piggy-target="true"
               onClick={onOpenFlowchart}
               className="inline-flex items-center gap-1.5 rounded-lg border border-[#FACC15] bg-[#FEF9C3] px-3.5 py-2 text-xs font-semibold text-[#0F294A] transition-all duration-150 hover:bg-[#FDE047] whitespace-nowrap shrink-0 cursor-pointer"
             >
@@ -222,7 +216,15 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
             </button>
             <button
               type="button"
-              onClick={() => setEditingMeta((v) => !v)}
+              onClick={() => {
+                if (!editingMeta) {
+                  metaOriginalRef.current = state.matrizMeta;
+                  setMetaForm(state.matrizMeta);
+                  setEditingMeta(true);
+                } else {
+                  setEditingMeta(false);
+                }
+              }}
               className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F294A]/20 bg-white px-3.5 py-2 text-xs font-semibold text-[#0F294A] transition-colors hover:border-[#D61F26] hover:text-[#D61F26] whitespace-nowrap shrink-0 cursor-pointer"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -234,6 +236,9 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
         <div className="p-6">
           {editingMeta ? (
             <form
+              data-submodule-surface="true"
+              data-piggy-priority="form"
+              data-piggy-context="matriz:edit-meta"
               onSubmit={(e) => {
                 e.preventDefault();
                 updateMatrizMeta(metaForm);
@@ -256,9 +261,9 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
                   <label className="mb-1 block text-xs font-medium text-[#0F294A]">Código</label>
                   <input
                     type="text"
-                    required
                     value={metaForm.codigo}
                     onChange={(e) => setMetaForm({ ...metaForm, codigo: e.target.value })}
+                    placeholder="Pendiente de asignación"
                     className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-mono text-sm"
                   />
                 </div>
@@ -266,9 +271,9 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
                   <label className="mb-1 block text-xs font-medium text-[#0F294A]">Versión</label>
                   <input
                     type="text"
-                    required
                     value={metaForm.version}
                     onChange={(e) => setMetaForm({ ...metaForm, version: e.target.value })}
+                    placeholder="Pendiente de asignación"
                     className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-mono text-sm"
                   />
                 </div>
@@ -276,9 +281,9 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
                   <label className="mb-1 block text-xs font-medium text-[#0F294A]">Fecha</label>
                   <input
                     type="text"
-                    required
                     value={metaForm.fecha}
                     onChange={(e) => setMetaForm({ ...metaForm, fecha: e.target.value })}
+                    placeholder="Pendiente de asignación"
                     className="w-full rounded-lg border border-slate-300 px-3 py-1.5 font-mono text-sm"
                   />
                 </div>
@@ -311,7 +316,8 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
                 <button
                   type="button"
                   onClick={() => {
-                    setMetaForm(state.matrizMeta);
+                    updateMatrizMeta(metaOriginalRef.current, { silent: true });
+                    setMetaForm(metaOriginalRef.current);
                     setEditingMeta(false);
                   }}
                   className="rounded-lg border border-slate-200 px-3.5 py-1.5 text-xs font-semibold text-[#0F294A]"
@@ -327,11 +333,20 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
               </div>
             </form>
           ) : (
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#D61F26]">
-                Objetivo de la matriz
-              </p>
-              <p className="text-sm leading-relaxed text-slate-700">{state.matrizMeta.objetivo}</p>
+            <div className="space-y-4">
+              <InstitutionalQualityBox
+                empresa={state.matrizMeta.empresa}
+                tituloDocumento="MATRIZ DETALLADA DEL PROCEDIMIENTO DE BIENESTAR SOCIAL LABORAL"
+                codigo={state.matrizMeta.codigo}
+                version={state.matrizMeta.version}
+                fecha={state.matrizMeta.fecha}
+              />
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#D61F26]">
+                  Objetivo de la matriz
+                </p>
+                <p className="text-sm leading-relaxed text-slate-700">{state.matrizMeta.objetivo}</p>
+              </div>
             </div>
           )}
         </div>
@@ -352,11 +367,12 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
 
         <button
           type="button"
+          data-piggy-submodule="true"
           onClick={() => {
             setShowAddForm((v) => !v);
             setFormError('');
           }}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-4 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-[#B3161C] hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#D61F26] border-b-2 border-[#FACC15] px-4 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-[#B3161C] hover:-translate-y-0.5 whitespace-nowrap shrink-0 cursor-pointer"
         >
           <Plus className="h-4 w-4 text-[#FACC15]" />
           {showAddForm ? 'Cerrar formulario' : 'Agregar actividad'}
@@ -367,7 +383,9 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
       {showAddForm && (
         <form
           onSubmit={handleCreate}
-          className="rounded-xl border border-[#FDE047] bg-[#FFFBEB] p-5 space-y-4"
+          data-submodule-surface="true"
+          data-piggy-priority="form"
+          className="mt-14 rounded-xl border border-[#FDE047] bg-[#FFFBEB] p-5 space-y-4"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold text-[#0F294A]">
@@ -560,12 +578,12 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
                       <td className="px-4 py-3.5 text-slate-700 leading-relaxed">
                         {isEditing ? (
                           <textarea
-                            rows={3}
+                            rows={6}
                             value={editStep.descripcion}
                             onChange={(e) =>
                               setEditStep({ ...editStep, descripcion: e.target.value })
                             }
-                            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs"
+                            className="w-full min-w-[280px] rounded-md border border-slate-300 px-2.5 py-2 text-xs leading-relaxed"
                           />
                         ) : (
                           step.descripcion
@@ -614,6 +632,9 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
                             <button
                               type="button"
                               onClick={() => {
+                                if (editStepOriginalRef.current) {
+                                  updateProcessStep(editStepOriginalRef.current, { silent: true });
+                                }
                                 setEditingId(null);
                                 setEditStep(null);
                                 setEditError('');
@@ -654,6 +675,7 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
                             <button
                               type="button"
                               onClick={() => {
+                                editStepOriginalRef.current = { ...step };
                                 setEditingId(step.id);
                                 setEditStep({ ...step });
                                 setEditError('');

@@ -32,16 +32,19 @@ import {
   QualityLogoAsset,
 } from './institutionalLogoAsset';
 
-const FONT = 'Arial';
-const MARGIN = 1134;
+const FONT = 'Times New Roman';
+const MARGIN = 1440; // 2.54 cm (norma formal APA 7ª ed.)
+const BODY_LINE_SPACING = 360; // Interlineado 1.5 líneas
 const NAVY = '0F294A';
-const RED = 'D61F26';
-const YELLOW_SOFT = 'FEF9C3';
-const BLUE_SOFT = 'EFF6FF';
+const RED = '0F294A';
+const YELLOW_SOFT = 'F1F5F9';
+const BLUE_SOFT = 'F8FAFC';
 const ZEBRA = 'F8FAFC';
 const BORDER = 'CBD5E1';
-const TEXT = '1E293B';
-const MUTED = '475569';
+const HEADER_BG = 'F1F5F9';
+const HEADER_BORDER = '334155';
+const TEXT = '000000';
+const MUTED = '334155';
 
 export type FormatoWordKey =
   | 'portada'
@@ -72,7 +75,7 @@ function pText(
   return new Paragraph({
     alignment: opts?.align ?? AlignmentType.LEFT,
     spacing: {
-      line: 276,
+      line: BODY_LINE_SPACING,
       before: opts?.before ?? 40,
       after: opts?.after ?? 80,
     },
@@ -80,10 +83,28 @@ function pText(
       new TextRun({
         text,
         font: FONT,
-        size: opts?.size ?? 20,
+        size: opts?.size ?? 24, // 12pt Times New Roman
         bold: opts?.bold,
         italics: opts?.italic,
         color: opts?.color ?? TEXT,
+      }),
+    ],
+  });
+}
+
+function mainHeading(text: string): Paragraph {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_1,
+    keepNext: true,
+    alignment: AlignmentType.CENTER,
+    spacing: { line: BODY_LINE_SPACING, before: 140, after: 100 },
+    children: [
+      new TextRun({
+        text,
+        font: FONT,
+        size: 28, // 14pt Times New Roman
+        bold: true,
+        color: NAVY,
       }),
     ],
   });
@@ -93,17 +114,17 @@ function sectionTitle(text: string): Paragraph {
   return new Paragraph({
     heading: HeadingLevel.HEADING_2,
     keepNext: true,
-    spacing: { before: 180, after: 80 },
+    spacing: { line: BODY_LINE_SPACING, before: 180, after: 80 },
     border: {
-      bottom: { style: BorderStyle.SINGLE, size: 8, color: 'FACC15' },
+      bottom: { style: BorderStyle.SINGLE, size: 4, color: HEADER_BORDER },
     },
     children: [
       new TextRun({
         text,
         font: FONT,
-        size: 23,
+        size: 24, // 12pt Times New Roman negrita
         bold: true,
-        color: NAVY,
+        color: TEXT,
       }),
     ],
   });
@@ -127,17 +148,17 @@ function cell(
     width: opts?.widthPct ? { size: opts.widthPct, type: WidthType.PERCENTAGE } : undefined,
     verticalAlign: VerticalAlign.CENTER,
     shading: opts?.header
-      ? { type: ShadingType.CLEAR, color: 'auto', fill: NAVY }
+      ? { type: ShadingType.CLEAR, color: 'auto', fill: HEADER_BG }
       : opts?.fill
         ? { type: ShadingType.CLEAR, color: 'auto', fill: opts.fill }
-        : undefined,
-    margins: { top: 80, bottom: 80, left: 110, right: 110 },
+        : { type: ShadingType.CLEAR, color: 'auto', fill: 'FFFFFF' },
+    margins: { top: 80, bottom: 80, left: 100, right: 100 },
     borders: {
-      top: { style: BorderStyle.SINGLE, size: 4, color: BORDER },
+      top: { style: BorderStyle.SINGLE, size: 4, color: opts?.header ? HEADER_BORDER : BORDER },
       bottom: {
         style: BorderStyle.SINGLE,
-        size: opts?.header ? 12 : 4,
-        color: opts?.header ? 'FACC15' : BORDER,
+        size: opts?.header ? 8 : 4,
+        color: opts?.header ? HEADER_BORDER : BORDER,
       },
       left: { style: BorderStyle.SINGLE, size: 4, color: BORDER },
       right: { style: BorderStyle.SINGLE, size: 4, color: BORDER },
@@ -145,14 +166,14 @@ function cell(
     children: [
       new Paragraph({
         alignment: opts?.align ?? AlignmentType.LEFT,
-        spacing: { line: 240, before: 0, after: 0 },
+        spacing: { line: 276, before: 0, after: 0 },
         children: [
           new TextRun({
             text,
             font: FONT,
-            size: opts?.size ?? 19,
+            size: opts?.size ?? 20, // 10pt en tablas para ajuste limpio
             bold: opts?.bold || opts?.header,
-            color: opts?.header ? 'FFFFFF' : opts?.color ?? TEXT,
+            color: opts?.header ? NAVY : opts?.color ?? TEXT,
           }),
         ],
       }),
@@ -171,8 +192,8 @@ function buildInstructionsBox(instrucciones: string): Table {
           cell(`INSTRUCCIONES DE DILIGENCIAMIENTO: ${instrucciones}`, {
             widthPct: 100,
             fill: BLUE_SOFT,
-            color: NAVY,
-            size: 18,
+            color: TEXT,
+            size: 22,
           }),
         ],
       }),
@@ -180,20 +201,37 @@ function buildInstructionsBox(instrucciones: string): Table {
   });
 }
 
+function qualityBoxBorder() {
+  return {
+    top: { style: BorderStyle.SINGLE, size: 6, color: '1E293B' },
+    bottom: { style: BorderStyle.SINGLE, size: 6, color: '1E293B' },
+    left: { style: BorderStyle.SINGLE, size: 6, color: '1E293B' },
+    right: { style: BorderStyle.SINGLE, size: 6, color: '1E293B' },
+  };
+}
+
 /**
  * Caja de Calidad institucional obligatoria y uniforme para todos los documentos Word,
- * incorporando la imagen oficial proporcionada con su proporción exacta original.
+ * fiel al formato oficial: fondo blanco limpio, bordes oscuros nítidos y grilla de 3 columnas
+ * (logo izquierdo en 3 filas, razón social + título del formato en el centro, CÓDIGO/VERSIÓN/FECHA a la derecha).
  */
 function buildUniformQualityBox(
   title: string,
-  codigo: string,
-  version: string,
-  proceso: string,
-  logoAsset: QualityLogoAsset | null
+  logoAsset: QualityLogoAsset | null,
+  meta?: {
+    empresa?: string;
+    codigo?: string;
+    version?: string;
+    fecha?: string;
+  }
 ): Table {
   const logoFit = logoAsset
-    ? fitAspectDimensions(logoAsset.width, logoAsset.height, 138, 72)
+    ? fitAspectDimensions(logoAsset.width, logoAsset.height, 128, 66)
     : null;
+  const empresa = meta?.empresa?.trim() || 'Frikaz S.A.S.';
+  const cleanCode = meta?.codigo?.trim() || '';
+  const cleanVersion = meta?.version?.trim() || '';
+  const cleanDate = meta?.fecha?.trim() || '';
 
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -205,16 +243,11 @@ function buildUniformQualityBox(
         children: [
           new TableCell({
             rowSpan: 3,
-            width: { size: 28, type: WidthType.PERCENTAGE },
+            width: { size: 23, type: WidthType.PERCENTAGE },
             verticalAlign: VerticalAlign.CENTER,
             shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'FFFFFF' },
-            margins: { top: 70, bottom: 70, left: 80, right: 80 },
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 8, color: NAVY },
-              bottom: { style: BorderStyle.SINGLE, size: 12, color: 'FACC15' },
-              left: { style: BorderStyle.SINGLE, size: 8, color: NAVY },
-              right: { style: BorderStyle.SINGLE, size: 4, color: BORDER },
-            },
+            margins: { top: 65, bottom: 65, left: 80, right: 80 },
+            borders: qualityBoxBorder(),
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
@@ -233,7 +266,7 @@ function buildUniformQualityBox(
                       ]
                     : [
                         new TextRun({
-                          text: 'FRIKAZ S.A.S.',
+                          text: empresa,
                           font: FONT,
                           size: 22,
                           bold: true,
@@ -243,47 +276,126 @@ function buildUniformQualityBox(
               }),
             ],
           }),
-          cell('FRIKAZ S.A.S. · SISTEMA DE BIENESTAR SOCIAL LABORAL', {
-            colSpan: 3,
-            header: true,
-            align: AlignmentType.CENTER,
-            size: 18,
+          new TableCell({
+            rowSpan: 2,
+            width: { size: 52, type: WidthType.PERCENTAGE },
+            verticalAlign: VerticalAlign.CENTER,
+            shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'FFFFFF' },
+            margins: { top: 85, bottom: 85, left: 110, right: 110 },
+            borders: qualityBoxBorder(),
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { line: 240, before: 0, after: 0 },
+                children: [
+                  new TextRun({
+                    text: empresa,
+                    font: FONT,
+                    size: 22,
+                    bold: true,
+                    color: TEXT,
+                  }),
+                ],
+              }),
+            ],
+          }),
+          new TableCell({
+            width: { size: 25, type: WidthType.PERCENTAGE },
+            verticalAlign: VerticalAlign.CENTER,
+            shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'FFFFFF' },
+            margins: { top: 60, bottom: 60, left: 95, right: 95 },
+            borders: qualityBoxBorder(),
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { line: 220, before: 0, after: 0 },
+                children: [
+                  new TextRun({
+                    text: `CÓDIGO: ${cleanCode}`,
+                    font: FONT,
+                    size: 18,
+                    bold: true,
+                    color: TEXT,
+                  }),
+                ],
+              }),
+            ],
           }),
         ],
       }),
       new TableRow({
         cantSplit: true,
         children: [
-          cell(title.toUpperCase(), {
-            colSpan: 2,
-            bold: true,
-            color: NAVY,
-            fill: YELLOW_SOFT,
-            size: 19,
-          }),
-          cell(`Código: ${codigo}`, {
-            bold: true,
-            color: RED,
-            align: AlignmentType.CENTER,
-            size: 18,
+          new TableCell({
+            width: { size: 25, type: WidthType.PERCENTAGE },
+            verticalAlign: VerticalAlign.CENTER,
+            shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'FFFFFF' },
+            margins: { top: 60, bottom: 60, left: 95, right: 95 },
+            borders: qualityBoxBorder(),
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { line: 220, before: 0, after: 0 },
+                children: [
+                  new TextRun({
+                    text: `VERSIÓN: ${cleanVersion}`,
+                    font: FONT,
+                    size: 18,
+                    bold: true,
+                    color: TEXT,
+                  }),
+                ],
+              }),
+            ],
           }),
         ],
       }),
       new TableRow({
         cantSplit: true,
         children: [
-          cell(`Proceso: ${proceso}`, { widthPct: 32, size: 17, color: MUTED }),
-          cell(`Versión: ${version} · Vigencia: 2027`, {
-            widthPct: 22,
-            size: 17,
-            color: NAVY,
-            bold: true,
+          new TableCell({
+            width: { size: 52, type: WidthType.PERCENTAGE },
+            verticalAlign: VerticalAlign.CENTER,
+            shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'FFFFFF' },
+            margins: { top: 60, bottom: 60, left: 110, right: 110 },
+            borders: qualityBoxBorder(),
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { line: 220, before: 0, after: 0 },
+                children: [
+                  new TextRun({
+                    text: title.toUpperCase(),
+                    font: FONT,
+                    size: 18,
+                    bold: true,
+                    color: TEXT,
+                  }),
+                ],
+              }),
+            ],
           }),
-          cell('Formato en blanco', {
-            widthPct: 18,
-            size: 17,
-            color: MUTED,
-            align: AlignmentType.CENTER,
+          new TableCell({
+            width: { size: 25, type: WidthType.PERCENTAGE },
+            verticalAlign: VerticalAlign.CENTER,
+            shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'FFFFFF' },
+            margins: { top: 60, bottom: 60, left: 95, right: 95 },
+            borders: qualityBoxBorder(),
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { line: 220, before: 0, after: 0 },
+                children: [
+                  new TextRun({
+                    text: `FECHA: ${cleanDate}`,
+                    font: FONT,
+                    size: 18,
+                    bold: true,
+                    color: TEXT,
+                  }),
+                ],
+              }),
+            ],
           }),
         ],
       }),
@@ -304,11 +416,11 @@ function buildSignatureBlock(
         children: [
           cell(
             `${leftLabel}\n\nNombre: ___________________________\nCargo:  ___________________________\nFecha:  ____ / ____ / 2027\nFirma:  ___________________________`,
-            { widthPct: 50, fill: ZEBRA, size: 18 }
+            { widthPct: 50, fill: ZEBRA, size: 20 }
           ),
           cell(
             `${rightLabel}\n\nNombre: ___________________________\nCargo:  ___________________________\nFecha:  ____ / ____ / 2027\nFirma:  ___________________________`,
-            { widthPct: 50, fill: ZEBRA, size: 18 }
+            { widthPct: 50, fill: ZEBRA, size: 20 }
           ),
         ],
       }),
@@ -318,16 +430,67 @@ function buildSignatureBlock(
 
 function wrapInInstitutionalDocument(
   title: string,
-  codigo: string,
-  proceso: string,
   instrucciones: string,
   logoAsset: QualityLogoAsset | null,
-  bodyChildren: (Paragraph | Table)[]
+  bodyChildren: (Paragraph | Table)[],
+  empresa = 'Frikaz S.A.S.'
 ): Document {
   return new Document({
-    creator: 'Frikaz S.A.S.',
+    creator: empresa,
     title,
-    description: `${title} - Formato Institucional en Blanco - Frikaz S.A.S.`,
+    description: `${title} - Formato Institucional en Blanco - ${empresa}`,
+    styles: {
+      default: {
+        document: {
+          run: {
+            font: FONT,
+            size: 24, // 12pt Times New Roman
+            color: TEXT,
+          },
+          paragraph: {
+            spacing: { line: BODY_LINE_SPACING, lineRule: 'auto' },
+          },
+        },
+        heading1: {
+          run: {
+            font: FONT,
+            size: 28, // 14pt Times New Roman
+            bold: true,
+            color: NAVY,
+          },
+          paragraph: {
+            spacing: { line: BODY_LINE_SPACING, before: 140, after: 100 },
+          },
+        },
+        heading2: {
+          run: {
+            font: FONT,
+            size: 24, // 12pt Times New Roman
+            bold: true,
+            color: TEXT,
+          },
+          paragraph: {
+            spacing: { line: BODY_LINE_SPACING, before: 180, after: 80 },
+          },
+        },
+      },
+      paragraphStyles: [
+        {
+          id: 'Normal',
+          name: 'Normal',
+          basedOn: 'Normal',
+          next: 'Normal',
+          run: {
+            font: FONT,
+            size: 24,
+            color: TEXT,
+          },
+          paragraph: {
+            spacing: { line: BODY_LINE_SPACING, lineRule: 'auto' },
+          },
+        },
+      ],
+    },
     sections: [
       {
         properties: {
@@ -343,23 +506,23 @@ function wrapInInstitutionalDocument(
                 alignment: AlignmentType.RIGHT,
                 children: [
                   new TextRun({
-                    text: `Frikaz S.A.S. · ${codigo} (v01 - 2027)    Página `,
+                    text: `${empresa} · ${title}    Página `,
                     font: FONT,
-                    size: 16,
+                    size: 18,
                     color: MUTED,
                   }),
                   new TextRun({
                     children: [PageNumber.CURRENT],
                     font: FONT,
-                    size: 16,
+                    size: 18,
                     bold: true,
                     color: NAVY,
                   }),
-                  new TextRun({ text: ' de ', font: FONT, size: 16, color: MUTED }),
+                  new TextRun({ text: ' de ', font: FONT, size: 18, color: MUTED }),
                   new TextRun({
                     children: [PageNumber.TOTAL_PAGES],
                     font: FONT,
-                    size: 16,
+                    size: 18,
                     color: MUTED,
                   }),
                 ],
@@ -374,9 +537,9 @@ function wrapInInstitutionalDocument(
                 alignment: AlignmentType.CENTER,
                 children: [
                   new TextRun({
-                    text: 'Frikaz S.A.S. · Plan Anual de Bienestar Social Laboral 2027 · Formato Oficial Listo para Diligenciar',
+                    text: `${empresa} · Plan Anual de Bienestar Social Laboral 2027 · Formato Oficial Listo para Diligenciar`,
                     font: FONT,
-                    size: 16,
+                    size: 18,
                     color: MUTED,
                   }),
                 ],
@@ -385,8 +548,13 @@ function wrapInInstitutionalDocument(
           }),
         },
         children: [
-          buildUniformQualityBox(title, codigo, '01', proceso, logoAsset),
-          new Paragraph({ spacing: { before: 60, after: 40 }, children: [] }),
+          buildUniformQualityBox(title, logoAsset, {
+            empresa,
+            codigo: '',
+            version: '',
+            fecha: '',
+          }),
+          mainHeading(title),
           buildInstructionsBox(instrucciones),
           new Paragraph({ spacing: { before: 60, after: 60 }, children: [] }),
           ...bodyChildren,
@@ -644,7 +812,7 @@ function buildEncuestaWordBody(actividadId: string): (Paragraph | Table)[] {
     }),
     pText(
       'Marque con una X su calificación:   1 = Muy insatisfecho   |   2 = Insatisfecho   |   3 = Neutral   |   4 = Satisfecho   |   5 = Muy satisfecho',
-      { bold: true, size: 18, color: RED, before: 120 }
+      { bold: true, size: 22, color: RED, before: 120 }
     ),
     new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
@@ -823,7 +991,7 @@ function buildRegistroEvidenciasBody(): (Paragraph | Table)[] {
               cell('', { widthPct: 27 }),
               cell('', { widthPct: 14 }),
               cell('', { widthPct: 16 }),
-              cell('[  ] Sí  [  ] No', { widthPct: 12, align: AlignmentType.CENTER, size: 15 }),
+              cell('[  ] Sí  [  ] No', { widthPct: 12, align: AlignmentType.CENTER, size: 20 }),
             ],
           })
         ),
@@ -1108,136 +1276,126 @@ export async function generateWordFormatBlob(
   let doc: Document;
   let filename: string;
 
+  const empresa = state.planGeneral.empresa || 'Frikaz S.A.S.';
+
   switch (key) {
     case 'portada':
       doc = wrapInInstitutionalDocument(
         'Portada del Plan Anual de Bienestar Social Laboral 2027',
-        'TH-FBS-01',
-        'Planificación Estratégica',
         'Diligencie los campos en blanco de aprobación, población, presupuesto aprobado y firmas institucionales antes de archivar.',
         logoAsset,
-        buildPortadaBody(state)
+        buildPortadaBody(state),
+        empresa
       );
       filename = '01_Portada_Plan_Bienestar_2027_Frikaz.docx';
       break;
     case 'planificacion':
       doc = wrapInInstitutionalDocument(
         'Documento de Planificación General del Programa 2027',
-        'TH-FBS-02',
-        'Planificación del Bienestar',
         'Use las casillas vacías de la matriz para registrar fechas reales de ejecución, asistentes y presupuesto ejecutado por cada actividad.',
         logoAsset,
-        buildPlanificacionGeneralBody(state)
+        buildPlanificacionGeneralBody(state),
+        empresa
       );
       filename = '02_Planificacion_General_Programa_2027_Frikaz.docx';
       break;
     case 'ficha':
       doc = wrapInInstitutionalDocument(
         `Ficha Técnica de Actividad: ${act.actividad}`,
-        `TH-FT-${String(act.numero || 1).padStart(2, '0')}`,
-        `Dimensión ${act.dimension}`,
         'Complete los espacios en blanco de fecha real, participantes, recursos utilizados y firmas al ejecutar la actividad.',
         logoAsset,
-        buildFichaActividadBody(act)
+        buildFichaActividadBody(act),
+        empresa
       );
       filename = `03_Ficha_Tecnica_${actSlug}_Frikaz.docx`;
       break;
     case 'encuesta':
       doc = wrapInInstitutionalDocument(
         `Encuesta de Satisfacción: ${act.actividad}`,
-        `TH-ES-${String(act.numero || 1).padStart(2, '0')}`,
-        'Evaluación y Satisfacción',
         'Diligencie la fecha, marque con X una sola opción de 1 a 5 por cada pregunta y complete las preguntas abiertas.',
         logoAsset,
-        buildEncuestaWordBody(act.id)
+        buildEncuestaWordBody(act.id),
+        empresa
       );
       filename = `04_Encuesta_Satisfaccion_${actSlug}_Frikaz.docx`;
       break;
     case 'asistencia':
       doc = wrapInInstitutionalDocument(
         'Formato Oficial de Lista de Asistencia 2027',
-        'TH-FBS-05',
-        'Registro de Asistencia',
         'Registre el nombre de la actividad, fecha, horario, lugar, responsable y los datos y firma de cada participante asistente.',
         logoAsset,
-        buildListaAsistenciaWordBody()
+        buildListaAsistenciaWordBody(),
+        empresa
       );
       filename = '05_Lista_Asistencia_En_Blanco_Frikaz.docx';
       break;
     case 'acta':
       doc = wrapInInstitutionalDocument(
         'Acta de Ejecución de Actividades de Bienestar',
-        'TH-FBS-06',
-        'Ejecución y Seguimiento',
         'Complete todos los campos del acta al finalizar la jornada e incluya las firmas de soporte.',
         logoAsset,
-        buildActaEjecucionBody()
+        buildActaEjecucionBody(),
+        empresa
       );
       filename = '06_Acta_Ejecucion_Actividades_2027_Frikaz.docx';
       break;
     case 'evidencias':
       doc = wrapInInstitutionalDocument(
         'Formato de Registro de Evidencias 2027',
-        'TH-FBS-07',
-        'Seguimiento Documental',
         'Registre cada soporte fotográfico o documental generado durante el plan indicando código, fecha y verificación.',
         logoAsset,
-        buildRegistroEvidenciasBody()
+        buildRegistroEvidenciasBody(),
+        empresa
       );
       filename = '07_Registro_Evidencias_2027_Frikaz.docx';
       break;
     case 'informe':
       doc = wrapInInstitutionalDocument(
         'Informe de Resultados del Plan Anual de Bienestar 2027',
-        'TH-FBS-08',
-        'Evaluación de Resultados',
         'Consolide los indicadores reales obtenidos al cierre del período, detalle por actividad, conclusiones y firmas.',
         logoAsset,
-        buildInformeResultadosBody()
+        buildInformeResultadosBody(),
+        empresa
       );
       filename = '08_Informe_Resultados_2027_Frikaz.docx';
       break;
     case 'mejora':
       doc = wrapInInstitutionalDocument(
         'Plan de Mejora Continua del Bienestar Laboral',
-        'TH-FBS-09',
-        'Evaluación y Mejora',
         'Registre las oportunidades de mejora reales detectadas en encuestas o seguimiento, la acción definida, el responsable y el plazo.',
         logoAsset,
-        buildPlanMejoraBody()
+        buildPlanMejoraBody(),
+        empresa
       );
       filename = '09_Plan_de_Mejora_2027_Frikaz.docx';
       break;
     case 'compromisos':
       doc = wrapInInstitutionalDocument(
         'Seguimiento de Compromisos de Bienestar Social Laboral',
-        'TH-FBS-10',
-        'Seguimiento de Gestión',
         'Anote cada compromiso pactado en reuniones o actividades junto con su responsable, fecha límite y estado de cierre.',
         logoAsset,
-        buildSeguimientoCompromisosBody()
+        buildSeguimientoCompromisosBody(),
+        empresa
       );
       filename = '10_Seguimiento_Compromisos_2027_Frikaz.docx';
       break;
     case 'bonos':
       doc = wrapInInstitutionalDocument(
         'Registro de Entrega de Bonos y Reconocimientos 2027',
-        'TH-FBS-11',
-        'Incentivos y Reconocimientos',
         'Registre manualmente al trabajador beneficiario, documento, fecha, valor entregado y firma de recibido.',
         logoAsset,
-        buildEntregaBonosReconocimientosBody()
+        buildEntregaBonosReconocimientosBody(),
+        empresa
       );
       filename = '11_Entrega_Bonos_y_Reconocimientos_2027_Frikaz.docx';
       break;
     case 'convenios':
       doc = wrapInInstitutionalDocument(
         'Registro Institucional de Convenios Vigentes 2027',
-        'TH-FBS-12',
-        'Alianzas y Convenios',
         'Diligencie los convenios vigentes, entidad aliada, beneficios acordados, contacto, vigencia y responsable.',
         logoAsset,
-        buildRegistroConveniosBody()
+        buildRegistroConveniosBody(),
+        empresa
       );
       filename = '12_Registro_Convenios_2027_Frikaz.docx';
       break;

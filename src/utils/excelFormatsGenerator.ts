@@ -37,76 +37,108 @@ function applyThinBorder(cell: ExcelJS.Cell) {
   };
 }
 
+const QUALITY_BOX_BORDER = 'FF1E293B';
+
+function applyQualityBoxBorder(cell: ExcelJS.Cell) {
+  cell.border = {
+    top: { style: 'thin', color: { argb: QUALITY_BOX_BORDER } },
+    left: { style: 'thin', color: { argb: QUALITY_BOX_BORDER } },
+    bottom: { style: 'thin', color: { argb: QUALITY_BOX_BORDER } },
+    right: { style: 'thin', color: { argb: QUALITY_BOX_BORDER } },
+  };
+}
+
 /**
- * Caja de Calidad institucional uniforme en filas 1-3 para todos los libros Excel,
- * incrustando la imagen oficial proporcionada con su proporción exacta original.
+ * Caja de Calidad institucional única y obligatoria en filas 1-3 para todos los libros Excel,
+ * fiel al formato oficial: fondo blanco limpio, bordes nítidos oscuros y grilla 3 columnas
+ * (logo izquierdo en 3 filas, razón social + título en columna central, CÓDIGO/VERSIÓN/FECHA a la derecha).
  */
 function addQualityHeader(
   wb: ExcelJS.Workbook,
   ws: ExcelJS.Worksheet,
   title: string,
-  codigo: string,
-  subtitle: string,
   colCount: number,
-  logoAsset: QualityLogoAsset | null
+  logoAsset: QualityLogoAsset | null,
+  meta?: {
+    empresa?: string;
+    codigo?: string;
+    version?: string;
+    fecha?: string;
+  }
 ) {
-  const safeCols = Math.max(colCount, 4);
-  const logoColEnd = safeCols >= 6 ? 2 : 1;
+  const safeCols = Math.max(colCount, 5);
+  const logoColEnd = safeCols >= 10 ? 2 : 1;
+  const metaColSpan = safeCols >= 14 ? 3 : safeCols >= 8 ? 2 : 1;
+  const midStart = logoColEnd + 1;
+  const midEnd = safeCols - metaColSpan;
+  const metaStart = safeCols - metaColSpan + 1;
 
-  ws.getRow(1).height = 24;
-  ws.getRow(2).height = 24;
-  ws.getRow(3).height = 20;
+  const empresa = meta?.empresa?.trim() || 'Frikaz S.A.S.';
+  const cleanCode = meta?.codigo?.trim() || '';
+  const cleanVersion = meta?.version?.trim() || '';
+  const cleanDate = meta?.fecha?.trim() || '';
 
-  ws.mergeCells(1, 1, 3, logoColEnd);
+  ws.getRow(1).height = 22;
+  ws.getRow(2).height = 22;
+  ws.getRow(3).height = 22;
+
   for (let r = 1; r <= 3; r++) {
-    for (let c = 1; c <= logoColEnd; c++) {
+    for (let c = 1; c <= safeCols; c++) {
       const cell = ws.getCell(r, c);
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: WHITE } };
-      applyThinBorder(cell);
+      applyQualityBoxBorder(cell);
     }
   }
 
+  // Columna izquierda (filas 1-3): Logotipo oficial
+  ws.mergeCells(1, 1, 3, logoColEnd);
   if (logoAsset) {
     const imgId = wb.addImage({
       base64: logoAsset.base64,
       extension: 'png',
     });
-    const fit = fitAspectDimensions(logoAsset.width, logoAsset.height, 128, 60);
+    const fit = fitAspectDimensions(logoAsset.width, logoAsset.height, 118, 56);
     ws.addImage(imgId, {
-      tl: { col: 0.12, row: 0.12 },
+      tl: { col: 0.14, row: 0.14 },
       ext: { width: fit.width, height: fit.height },
       editAs: 'oneCell',
     });
   } else {
-    ws.getCell(1, 1).value = 'FRIKAZ S.A.S.';
+    ws.getCell(1, 1).value = empresa;
     ws.getCell(1, 1).font = { name: 'Calibri', size: 12, bold: true, color: { argb: FRIKAZ_RED } };
     ws.getCell(1, 1).alignment = { horizontal: 'center', vertical: 'middle' };
   }
 
-  const rightStart = logoColEnd + 1;
-  ws.mergeCells(1, rightStart, 1, safeCols);
-  const r1 = ws.getCell(1, rightStart);
-  r1.value = `FRIKAZ S.A.S. · CONTROL DOCUMENTAL Y CAJA DE CALIDAD (${codigo})`;
-  r1.font = { name: 'Calibri', size: 12, bold: true, color: { argb: WHITE } };
-  r1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: FRIKAZ_RED } };
-  r1.alignment = { horizontal: 'center', vertical: 'middle' };
-  for (let c = rightStart; c <= safeCols; c++) applyThinBorder(ws.getCell(1, c));
+  // Columna central (filas 1-2: empresa, fila 3: título del formato)
+  ws.mergeCells(1, midStart, 2, midEnd);
+  const companyCell = ws.getCell(1, midStart);
+  companyCell.value = empresa;
+  companyCell.font = { name: 'Calibri', size: 12, bold: true, color: { argb: QUALITY_BOX_BORDER } };
+  companyCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
-  ws.mergeCells(2, rightStart, 2, safeCols);
-  const r2 = ws.getCell(2, rightStart);
-  r2.value = title.toUpperCase();
-  r2.font = { name: 'Calibri', size: 11, bold: true, color: { argb: FRIKAZ_YELLOW } };
-  r2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: FRIKAZ_NAVY } };
-  r2.alignment = { horizontal: 'center', vertical: 'middle' };
-  for (let c = rightStart; c <= safeCols; c++) applyThinBorder(ws.getCell(2, c));
+  if (midEnd > midStart) {
+    ws.mergeCells(3, midStart, 3, midEnd);
+  }
+  const titleCell = ws.getCell(3, midStart);
+  titleCell.value = title.toUpperCase();
+  titleCell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: QUALITY_BOX_BORDER } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
 
-  ws.mergeCells(3, rightStart, 3, safeCols);
-  const r3 = ws.getCell(3, rightStart);
-  r3.value = `${subtitle} · Versión 01 · Vigencia 2027`;
-  r3.font = { name: 'Calibri', size: 9.5, italic: true, color: { argb: FRIKAZ_NAVY } };
-  r3.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: FRIKAZ_YELLOW_SOFT } };
-  r3.alignment = { horizontal: 'center', vertical: 'middle' };
-  for (let c = rightStart; c <= safeCols; c++) applyThinBorder(ws.getCell(3, c));
+  // Columna derecha (fila 1: CÓDIGO, fila 2: VERSIÓN, fila 3: FECHA)
+  const metaRows: Array<[number, string]> = [
+    [1, `CÓDIGO: ${cleanCode}`],
+    [2, `VERSIÓN: ${cleanVersion}`],
+    [3, `FECHA: ${cleanDate}`],
+  ];
+  for (const [rIdx, label] of metaRows) {
+    if (safeCols > metaStart) {
+      ws.mergeCells(rIdx, metaStart, rIdx, safeCols);
+    }
+    const mCell = ws.getCell(rIdx, metaStart);
+    mCell.value = label;
+    mCell.font = { name: 'Calibri', size: 9.5, bold: true, color: { argb: QUALITY_BOX_BORDER } };
+    mCell.alignment = { horizontal: 'left', vertical: 'middle' };
+  }
 }
 
 function addInstructionsRow(
@@ -178,8 +210,6 @@ export async function buildPresupuestoGeneral2027Workbook(
     wb,
     ws,
     'PRESUPUESTO GENERAL ANUAL 2027 · FORMATO EN BLANCO',
-    'TH-PG-01',
-    'Frikaz S.A.S. · Formato Listo para Diligenciar (COP)',
     9,
     logo
   );
@@ -298,8 +328,6 @@ export async function buildDesglosePresupuestalWorkbook(
     wb,
     ws,
     'DESGLOSE PRESUPUESTAL POR ACTIVIDAD · FORMATO EN BLANCO',
-    'TH-DP-02',
-    'Frikaz S.A.S. · Recursos, Cantidades, Valores Unitarios y Totales',
     9,
     logo
   );
@@ -406,8 +434,6 @@ export async function buildCronogramaAnual2027Workbook(
     wb,
     ws,
     'CRONOGRAMA ANUAL 2027 · FORMATO EN BLANCO (15 PARÁMETROS)',
-    'TH-CR-03',
-    'Frikaz S.A.S. · Listo para Diligenciar Actividades y Fechas',
     15,
     logo
   );
@@ -502,8 +528,6 @@ export async function buildDiagramaGantt2027Workbook(
     wb,
     ws,
     'DIAGRAMA DE GANTT ANUAL 2027 · FORMATO EN BLANCO',
-    'TH-GT-04',
-    'Frikaz S.A.S. · Programación Mensual Ene a Dic 2027',
     19,
     logo
   );
@@ -612,8 +636,6 @@ export async function buildSeguimientoActividadesWorkbook(
     wb,
     ws,
     'SEGUIMIENTO DE EJECUCIÓN DE ACTIVIDADES · FORMATO EN BLANCO',
-    'TH-SG-05',
-    'Frikaz S.A.S. · Control de Cumplimiento y Metas',
     10,
     logo
   );
@@ -701,9 +723,7 @@ export async function buildPlantillaAsistenciaEnBlancoWorkbook(
   addQualityHeader(
     wb,
     ws,
-    'PLAN ANUAL DE BIENESTAR SOCIAL LABORAL · LISTA DE ASISTENCIA',
-    'TH-AS-06',
-    'Frikaz S.A.S. · Plantilla Oficial en Blanco',
+    'LISTA DE ASISTENCIA · PLAN ANUAL DE BIENESTAR SOCIAL LABORAL',
     6,
     logo
   );
@@ -815,10 +835,9 @@ export async function buildListaAsistenciaDiligenciadaWorkbook(
     wb,
     ws,
     `LISTA DE ASISTENCIA DILIGENCIADA · ${regCode}`,
-    'TH-AS-06',
-    `Frikaz S.A.S. · Registrada: ${(lista.fechaHoraRegistro || '').slice(0, 16).replace('T', ' ')}`,
     6,
-    logo
+    logo,
+    { fecha: lista.fecha || '' }
   );
 
   const metaPairs: Array<[string, ExcelJS.CellValue, string, ExcelJS.CellValue]> = [
@@ -940,8 +959,6 @@ export async function buildConsolidadoAsistenciasWorkbook(
     wb,
     ws,
     'CONSOLIDADO GENERAL DE ASISTENCIA A ACTIVIDADES · 2027',
-    'TH-AS-CON',
-    `Frikaz S.A.S. · ${listas.length} jornadas registradas`,
     10,
     logo
   );
@@ -1005,8 +1022,6 @@ export async function buildConsolidadoAsistenciasWorkbook(
     wb,
     wsAct,
     'RESUMEN DE PARTICIPACIÓN POR ACTIVIDAD · 2027',
-    'TH-AS-ACT',
-    'Frikaz S.A.S. · Base poblacional: 10 trabajadores',
     6,
     logo
   );
@@ -1036,8 +1051,6 @@ export async function buildConsolidadoAsistenciasWorkbook(
     wb,
     wsColab,
     'HISTORIAL DE PARTICIPACIÓN POR COLABORADOR',
-    'TH-AS-COL',
-    'Frikaz S.A.S. · Consolidado Individual sin Exposición de Documentos',
     5,
     logo
   );
@@ -1117,8 +1130,6 @@ export async function buildEncuestaSatisfaccionWorkbook(
     wb,
     wsRes,
     'ENCUESTA DE SATISFACCIÓN · FORMATO EN BLANCO (ESCALA 1 A 5)',
-    'TH-EC-07',
-    '1: Muy insatisfecho · 2: Insatisfecho · 3: Neutral · 4: Satisfecho · 5: Muy satisfecho',
     15,
     logo
   );
@@ -1222,8 +1233,6 @@ export async function buildEncuestaSatisfaccionWorkbook(
     wb,
     wsBank,
     'CUESTIONARIOS ESPECÍFICOS EN BLANCO · 2027',
-    'TH-EC-07B',
-    'Banco de Preguntas por Actividad (Calificación vacía de 1 a 5)',
     5,
     logo
   );
@@ -1286,9 +1295,7 @@ export async function buildEncuestasRegistroWorkbook(
   addQualityHeader(
     wb,
     ws,
-    'REGISTRO DE ENCUESTAS DE SATISFACCIÓN · FRIKAZ S.A.S.',
-    'TH-REG-ENC',
-    `${filterDescription} (${respuestas.length} registros)`,
+    'REGISTRO DE ENCUESTAS DE SATISFACCIÓN',
     19,
     logo
   );
@@ -1386,8 +1393,6 @@ export async function buildEncuestasRegistroWorkbook(
     wb,
     wsCons,
     'CONSOLIDADO DE SATISFACCIÓN POR ACTIVIDAD · 2027',
-    'TH-REG-ACT',
-    filterDescription,
     5,
     logo
   );
@@ -1452,8 +1457,6 @@ export async function buildBaseDatosEncuestasWorkbook(
     wb,
     ws,
     'BASE DE DATOS DE ENCUESTAS · FORMATO EN BLANCO',
-    'TH-BD-08',
-    'Frikaz S.A.S. · Plantilla Histórica con Promedio y Tablero Automático',
     15,
     logo
   );
@@ -1526,8 +1529,6 @@ export async function buildBaseDatosEncuestasWorkbook(
     wb,
     wsRes,
     'TABLERO DINÁMICO DE RESULTADOS · EN BLANCO',
-    'TH-BD-08R',
-    'Fórmulas automáticas COUNTIF / AVERAGEIF listas para operar',
     5,
     logo
   );
@@ -1588,8 +1589,6 @@ export async function buildControlEntregaBonosWorkbook(
     wb,
     ws,
     'CONTROL DE ENTREGA DE BONOS · FORMATO EN BLANCO',
-    'TH-CB-09',
-    'Frikaz S.A.S. · Registro Manual de Entregas de Bonos Familiares',
     10,
     logo
   );
@@ -1688,8 +1687,6 @@ export async function buildRegistroTrabajadorMesWorkbook(
     wb,
     ws,
     'REGISTRO DE RECONOCIMIENTOS AL TRABAJADOR DEL MES · EN BLANCO',
-    'TH-TM-10',
-    'Frikaz S.A.S. · Planilla Anual en Blanco Listo para Diligenciar',
     8,
     logo
   );
@@ -1774,8 +1771,6 @@ export async function buildControlEvidenciasWorkbook(
     wb,
     ws,
     'CONTROL DE EVIDENCIAS · FORMATO EN BLANCO',
-    'TH-EV-11',
-    'Frikaz S.A.S. · Trazabilidad Fotográfica y Documental',
     8,
     logo
   );
@@ -1866,8 +1861,6 @@ export async function buildIndicadoresCumplimientoWorkbook(
     wb,
     ws,
     'INDICADORES DE CUMPLIMIENTO · FORMATO EN BLANCO',
-    'TH-IN-12',
-    'Frikaz S.A.S. · Participación, Satisfacción y Ejecución Presupuestal',
     10,
     logo
   );

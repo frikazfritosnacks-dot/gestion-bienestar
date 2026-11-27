@@ -12,6 +12,7 @@ import {
   Menu,
   RefreshCw,
   Sparkles,
+  UserCheck,
   X,
 } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
@@ -20,6 +21,7 @@ import { DimensionBienestar, ManualSubSectionId, SectionId } from './types/biene
 import { CoverPortada } from './components/sections/CoverPortada';
 import { InicioSection } from './components/sections/InicioSection';
 import { ManualSection } from './components/sections/ManualSection';
+import { ResponsablesPlanSection } from './components/sections/ResponsablesPlanSection';
 import { MatrizDetalladaSection } from './components/sections/MatrizDetalladaSection';
 import { FlujogramaSection } from './components/sections/FlujogramaSection';
 import {
@@ -44,6 +46,7 @@ const MENU_ITEMS: Array<{
 }> = [
   { id: 'inicio', label: 'Inicio', icon: Home },
   { id: 'manual', label: 'Manual', icon: BookOpen },
+  { id: 'responsables', label: 'Responsables', icon: UserCheck },
   { id: 'matriz', label: 'Matriz Detallada', icon: FileSpreadsheet },
   { id: 'flujograma', label: 'Flujograma', icon: GitFork },
   { id: 'programas', label: 'Programas de Bienestar', icon: HeartHandshake },
@@ -52,6 +55,7 @@ const MENU_ITEMS: Array<{
 const SECTION_TITLES: Record<SectionId, string> = {
   inicio: 'Inicio',
   manual: 'Manual',
+  responsables: 'Responsables del Plan',
   matriz: 'Matriz Detallada',
   flujograma: 'Flujograma',
   programas: 'Programas de Bienestar',
@@ -371,6 +375,18 @@ function AppShell() {
                     <ManualSection
                       activeSubTab={manualSubTab}
                       onChangeSubTab={(tab) => setManualSubTab(tab)}
+                    />
+                  )}
+
+                  {activeSection === 'responsables' && (
+                    <ResponsablesPlanSection
+                      onNavigate={(sec, subTab) => {
+                        if (sec === 'programas' && subTab) {
+                          setProgramasSubTab(subTab);
+                          setProgramasActividadId(null);
+                        }
+                        handleNavigate(sec);
+                      }}
                     />
                   )}
 

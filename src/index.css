@@ -321,6 +321,280 @@
   transition: opacity 280ms ease-out;
 }
 
+/* ============================================================================
+   PAUSAS ACTIVAS INTERACTIVAS — Movimientos articulares del cerdito Frikaz S.A.S.
+   leftArm (izq visual) sube hacia arriba con +deg; rightArm (der visual) sube con -deg
+   ============================================================================ */
+.frikaz-exercise-stage .piggy-head {
+  transform-origin: 50% 34%;
+  will-change: transform;
+}
+.frikaz-exercise-stage .piggy-left-arm {
+  transform-origin: 36.5% 41%;
+  will-change: transform;
+}
+.frikaz-exercise-stage .piggy-right-arm {
+  transform-origin: 67.5% 41%;
+  will-change: transform;
+}
+.frikaz-exercise-stage .piggy-torso {
+  transform-origin: 50% 56%;
+  will-change: transform;
+}
+.frikaz-exercise-stage .piggy-left-leg {
+  transform-origin: 43% 66%;
+  will-change: transform;
+}
+.frikaz-exercise-stage .piggy-right-leg {
+  transform-origin: 57% 66%;
+  will-change: transform;
+}
+
+.frikaz-exercise-paused .piggy-head,
+.frikaz-exercise-paused .piggy-left-arm,
+.frikaz-exercise-paused .piggy-right-arm,
+.frikaz-exercise-paused .piggy-torso,
+.frikaz-exercise-paused .piggy-left-leg,
+.frikaz-exercise-paused .piggy-right-leg,
+.frikaz-exercise-paused .piggy-shadow-layer {
+  animation-play-state: paused !important;
+}
+
+/* 1. Movilidad de cuello: inclinación lateral suave izquierda - centro - derecha */
+@keyframes ex-neck-tilt-head {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  25% { transform: translate3d(-4px, 1px, 0) rotate(-14deg); }
+  50% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  75% { transform: translate3d(4px, 1px, 0) rotate(14deg); }
+}
+.frikaz-exercise-neck-tilt .piggy-head {
+  animation: ex-neck-tilt-head 3.2s ease-in-out infinite;
+}
+.frikaz-exercise-neck-tilt .piggy-left-arm {
+  transform: rotate(-4deg);
+}
+.frikaz-exercise-neck-tilt .piggy-right-arm {
+  transform: rotate(4deg);
+}
+
+/* 2. Elevación y descenso de hombros */
+@keyframes ex-shrug-left-arm {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  45%, 60% { transform: translate3d(1px, -11px, 0) rotate(14deg); }
+}
+@keyframes ex-shrug-right-arm {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  45%, 60% { transform: translate3d(-1px, -11px, 0) rotate(-14deg); }
+}
+@keyframes ex-shrug-torso {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  45%, 60% { transform: translate3d(0, -3px, 0); }
+}
+.frikaz-exercise-shoulder-shrug .piggy-left-arm {
+  animation: ex-shrug-left-arm 2.4s ease-in-out infinite;
+}
+.frikaz-exercise-shoulder-shrug .piggy-right-arm {
+  animation: ex-shrug-right-arm 2.4s ease-in-out infinite;
+}
+.frikaz-exercise-shoulder-shrug .piggy-torso,
+.frikaz-exercise-shoulder-shrug .piggy-head {
+  animation: ex-shrug-torso 2.4s ease-in-out infinite;
+}
+
+/* 3. Círculos de hombros */
+@keyframes ex-rolls-left-arm {
+  0% { transform: translate3d(0, 0, 0) rotate(6deg); }
+  25% { transform: translate3d(-4px, -9px, 0) rotate(32deg); }
+  50% { transform: translate3d(2px, -8px, 0) rotate(18deg); }
+  75% { transform: translate3d(3px, 2px, 0) rotate(-14deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(6deg); }
+}
+@keyframes ex-rolls-right-arm {
+  0% { transform: translate3d(0, 0, 0) rotate(-6deg); }
+  25% { transform: translate3d(4px, -9px, 0) rotate(-32deg); }
+  50% { transform: translate3d(-2px, -8px, 0) rotate(-18deg); }
+  75% { transform: translate3d(-3px, 2px, 0) rotate(14deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(-6deg); }
+}
+.frikaz-exercise-shoulder-rolls .piggy-left-arm {
+  animation: ex-rolls-left-arm 2.2s ease-in-out infinite;
+}
+.frikaz-exercise-shoulder-rolls .piggy-right-arm {
+  animation: ex-rolls-right-arm 2.2s ease-in-out infinite;
+}
+.frikaz-exercise-shoulder-rolls .piggy-torso {
+  animation: ex-shrug-torso 2.2s ease-in-out infinite;
+}
+
+/* 4. Estiramiento de brazos hacia arriba */
+@keyframes ex-overhead-left {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(12deg); }
+  40%, 65% { transform: translate3d(3px, -10px, 0) rotate(128deg); }
+}
+@keyframes ex-overhead-right {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-12deg); }
+  40%, 65% { transform: translate3d(-3px, -10px, 0) rotate(-128deg); }
+}
+@keyframes ex-overhead-torso {
+  0%, 100% { transform: translate3d(0, 0, 0) scaleY(1); }
+  40%, 65% { transform: translate3d(0, -6px, 0) scaleY(1.03); }
+}
+@keyframes ex-overhead-head {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  40%, 65% { transform: translate3d(0, -8px, 0) rotate(-2deg); }
+}
+.frikaz-exercise-overhead-reach .piggy-left-arm {
+  animation: ex-overhead-left 2.8s ease-in-out infinite;
+}
+.frikaz-exercise-overhead-reach .piggy-right-arm {
+  animation: ex-overhead-right 2.8s ease-in-out infinite;
+}
+.frikaz-exercise-overhead-reach .piggy-torso {
+  animation: ex-overhead-torso 2.8s ease-in-out infinite;
+}
+.frikaz-exercise-overhead-reach .piggy-head {
+  animation: ex-overhead-head 2.8s ease-in-out infinite;
+}
+
+/* 5. Estiramiento suave de espalda / inclinación lateral controlada */
+@keyframes ex-back-torso {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  25% { transform: translate3d(-6px, 1px, 0) rotate(-9deg); }
+  50% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  75% { transform: translate3d(6px, 1px, 0) rotate(9deg); }
+}
+@keyframes ex-back-left-arm {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(18deg); }
+  25% { transform: translate3d(-6px, -4px, 0) rotate(42deg); }
+  50% { transform: translate3d(0, 0, 0) rotate(18deg); }
+  75% { transform: translate3d(6px, -6px, 0) rotate(98deg); }
+}
+@keyframes ex-back-right-arm {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-18deg); }
+  25% { transform: translate3d(-6px, -6px, 0) rotate(-98deg); }
+  50% { transform: translate3d(0, 0, 0) rotate(-18deg); }
+  75% { transform: translate3d(6px, -4px, 0) rotate(-42deg); }
+}
+.frikaz-exercise-back-stretch .piggy-torso,
+.frikaz-exercise-back-stretch .piggy-head {
+  animation: ex-back-torso 3.6s ease-in-out infinite;
+}
+.frikaz-exercise-back-stretch .piggy-left-arm {
+  animation: ex-back-left-arm 3.6s ease-in-out infinite;
+}
+.frikaz-exercise-back-stretch .piggy-right-arm {
+  animation: ex-back-right-arm 3.6s ease-in-out infinite;
+}
+
+/* 6. Movilidad de muñecas y manos al frente */
+@keyframes ex-wrist-left-arm {
+  0%, 100% { transform: translate3d(0, -2px, 0) rotate(52deg); }
+  25% { transform: translate3d(-2px, -4px, 0) rotate(72deg); }
+  50% { transform: translate3d(0, -2px, 0) rotate(44deg); }
+  75% { transform: translate3d(2px, -4px, 0) rotate(68deg); }
+}
+@keyframes ex-wrist-right-arm {
+  0%, 100% { transform: translate3d(0, -2px, 0) rotate(-52deg); }
+  25% { transform: translate3d(2px, -4px, 0) rotate(-72deg); }
+  50% { transform: translate3d(0, -2px, 0) rotate(-44deg); }
+  75% { transform: translate3d(-2px, -4px, 0) rotate(-68deg); }
+}
+.frikaz-exercise-wrist-stretch .piggy-left-arm {
+  animation: ex-wrist-left-arm 1.8s ease-in-out infinite;
+}
+.frikaz-exercise-wrist-stretch .piggy-right-arm {
+  animation: ex-wrist-right-arm 1.8s ease-in-out infinite;
+}
+
+/* 7. Marcha suave / elevación alternada de rodillas */
+@keyframes ex-knee-left-leg {
+  0%, 50%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  25% { transform: translate3d(-2px, -18px, 0) rotate(-20deg); }
+}
+@keyframes ex-knee-right-leg {
+  0%, 50%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  75% { transform: translate3d(2px, -18px, 0) rotate(20deg); }
+}
+@keyframes ex-knee-left-arm {
+  0%, 50%, 100% { transform: rotate(8deg); }
+  25% { transform: rotate(-16deg); }
+  75% { transform: rotate(38deg); }
+}
+@keyframes ex-knee-right-arm {
+  0%, 50%, 100% { transform: rotate(-8deg); }
+  25% { transform: rotate(-38deg); }
+  75% { transform: rotate(16deg); }
+}
+.frikaz-exercise-knee-lifts .piggy-left-leg {
+  animation: ex-knee-left-leg 1.8s ease-in-out infinite;
+}
+.frikaz-exercise-knee-lifts .piggy-right-leg {
+  animation: ex-knee-right-leg 1.8s ease-in-out infinite;
+}
+.frikaz-exercise-knee-lifts .piggy-left-arm {
+  animation: ex-knee-left-arm 1.8s ease-in-out infinite;
+}
+.frikaz-exercise-knee-lifts .piggy-right-arm {
+  animation: ex-knee-right-arm 1.8s ease-in-out infinite;
+}
+.frikaz-exercise-knee-lifts .piggy-torso,
+.frikaz-exercise-knee-lifts .piggy-head {
+  animation: frikaz-piggy-torso-stride 0.9s ease-in-out infinite;
+}
+
+/* 8. Activación de piernas y talones */
+@keyframes ex-calf-body-rise {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  45%, 65% { transform: translate3d(0, -14px, 0); }
+}
+@keyframes ex-calf-left-arm {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(6deg); }
+  45%, 65% { transform: translate3d(0, -14px, 0) rotate(26deg); }
+}
+@keyframes ex-calf-right-arm {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-6deg); }
+  45%, 65% { transform: translate3d(0, -14px, 0) rotate(-26deg); }
+}
+.frikaz-exercise-calf-raises .piggy-torso,
+.frikaz-exercise-calf-raises .piggy-head,
+.frikaz-exercise-calf-raises .piggy-left-leg,
+.frikaz-exercise-calf-raises .piggy-right-leg {
+  animation: ex-calf-body-rise 2.2s ease-in-out infinite;
+}
+.frikaz-exercise-calf-raises .piggy-left-arm {
+  animation: ex-calf-left-arm 2.2s ease-in-out infinite;
+}
+.frikaz-exercise-calf-raises .piggy-right-arm {
+  animation: ex-calf-right-arm 2.2s ease-in-out infinite;
+}
+.frikaz-exercise-calf-raises .piggy-shadow-layer {
+  animation: frikaz-piggy-shadow-pulse 2.2s ease-in-out infinite;
+}
+
+/* 9. Respiración profunda y cierre corporal */
+@keyframes ex-combo-left-arm {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(8deg); }
+  40%, 55% { transform: translate3d(2px, -9px, 0) rotate(118deg); }
+}
+@keyframes ex-combo-right-arm {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-8deg); }
+  40%, 55% { transform: translate3d(-2px, -9px, 0) rotate(-118deg); }
+}
+@keyframes ex-combo-chest {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  40%, 55% { transform: translate3d(0, -6px, 0) scale(1.03); }
+}
+.frikaz-exercise-full-combo .piggy-left-arm {
+  animation: ex-combo-left-arm 4s ease-in-out infinite;
+}
+.frikaz-exercise-full-combo .piggy-right-arm {
+  animation: ex-combo-right-arm 4s ease-in-out infinite;
+}
+.frikaz-exercise-full-combo .piggy-torso,
+.frikaz-exercise-full-combo .piggy-head {
+  animation: ex-combo-chest 4s ease-in-out infinite;
+}
+
 /* Official Google Sign-In button styling */
 .gsi-material-button {
   background-color: #ffffff;

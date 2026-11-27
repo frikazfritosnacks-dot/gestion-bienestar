@@ -10,6 +10,7 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
+  UserCheck,
 } from 'lucide-react';
 import { useBienestar } from '../../context/BienestarContext';
 import { ManualSubSectionId } from '../../types/bienestar';
@@ -122,11 +123,25 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
   const [textDraft, setTextDraft] = useState('');
   const textOriginalRef = useRef('');
 
-  // Edición de objetivos específicos con autoguardado
+  // Edición de objetivos específicos y responsables con autoguardado
   const [newObjText, setNewObjText] = useState('');
+  const [newObjResp, setNewObjResp] = useState('Gerente');
+  const [newObjFunc, setNewObjFunc] = useState('');
   const [editingObjId, setEditingObjId] = useState<string | null>(null);
   const [editingObjText, setEditingObjText] = useState('');
-  const objOriginalRef = useRef('');
+  const [editingObjResp, setEditingObjResp] = useState('Gerente');
+  const [editingObjFunc, setEditingObjFunc] = useState('');
+  const objOriginalRef = useRef<{ texto: string; resp: string; func: string }>({
+    texto: '',
+    resp: 'Gerente',
+    func: '',
+  });
+  const [objGenRespDraft, setObjGenRespDraft] = useState(
+    state.manual.objetivoGeneralResponsable || 'Gerente'
+  );
+  const [objGenFuncDraft, setObjGenFuncDraft] = useState(
+    state.manual.objetivoGeneralFuncion || ''
+  );
   const [deleteObjId, setDeleteObjId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -143,16 +158,26 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
     if (!editingObjId) return;
     if (!editingObjText.trim()) return;
     const timer = window.setTimeout(() => {
-      updateObjetivoEspecifico(editingObjId, editingObjText.trim(), { silent: true });
+      updateObjetivoEspecifico(
+        editingObjId,
+        editingObjText.trim(),
+        { silent: true },
+        editingObjResp.trim() || 'Gerente',
+        editingObjFunc.trim()
+      );
     }, 350);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingObjText, editingObjId]);
+  }, [editingObjText, editingObjResp, editingObjFunc, editingObjId]);
 
   const openTextEditor = (field: EditableManualTextField) => {
     const current = state.manual[field];
     textOriginalRef.current = current;
     setTextDraft(current);
+    if (field === 'objetivoGeneral') {
+      setObjGenRespDraft(state.manual.objetivoGeneralResponsable || 'Gerente');
+      setObjGenFuncDraft(state.manual.objetivoGeneralFuncion || '');
+    }
     setEditingTextTab(field);
   };
 
@@ -166,6 +191,14 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
   const saveTextEditor = (field: EditableManualTextField) => {
     if (!textDraft.trim()) return;
     updateManualField(field, textDraft.trim());
+    if (field === 'objetivoGeneral') {
+      updateManualField(
+        'objetivoGeneralResponsable',
+        objGenRespDraft.trim() || 'Gerente',
+        { silent: true }
+      );
+      updateManualField('objetivoGeneralFuncion', objGenFuncDraft.trim(), { silent: true });
+    }
     setEditingTextTab(null);
   };
 
@@ -631,11 +664,35 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
               {editingTextTab === 'objetivoGeneral' ? (
                 <div className="space-y-4">
                   <textarea
-                    rows={5}
+                    rows={4}
                     value={textDraft}
                     onChange={(e) => setTextDraft(e.target.value)}
                     className="w-full rounded-lg border border-slate-300 bg-white p-3.5 text-sm leading-relaxed text-[#0F294A] focus:border-[#0F294A] focus:outline-none"
                   />
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-[#0F294A]">
+                        Responsable del objetivo
+                      </label>
+                      <input
+                        type="text"
+                        value={objGenRespDraft}
+                        onChange={(e) => setObjGenRespDraft(e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-[#0F294A]"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="mb-1 block text-xs font-semibold text-[#0F294A]">
+                        Función breve del responsable
+                      </label>
+                      <input
+                        type="text"
+                        value={objGenFuncDraft}
+                        onChange={(e) => setObjGenFuncDraft(e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-[#0F294A]"
+                      />
+                    </div>
+                  </div>
                   <div className="flex items-center justify-end gap-3">
                     <button
                       type="button"
@@ -656,9 +713,23 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                   </div>
                 </div>
               ) : (
-                <p className="max-w-4xl whitespace-pre-line text-base leading-relaxed text-slate-700">
-                  {state.manual.objetivoGeneral}
-                </p>
+                <div className="space-y-4">
+                  <p className="max-w-4xl whitespace-pre-line text-base leading-relaxed text-slate-700">
+                    {state.manual.objetivoGeneral}
+                  </p>
+                  <div className="rounded-xl border border-[#FDE047] bg-[#FFFBEB] p-3.5 text-xs text-[#0F294A] space-y-1">
+                    <p className="flex items-center gap-1.5 font-extrabold">
+                      <UserCheck className="h-4 w-4 text-[#D61F26]" />
+                      Responsable: {state.manual.objetivoGeneralResponsable || 'Gerente'}
+                    </p>
+                    {state.manual.objetivoGeneralFuncion && (
+                      <p className="leading-relaxed text-slate-700">
+                        <strong className="text-[#0F294A]">Función de la Gerente:</strong>{' '}
+                        {state.manual.objetivoGeneralFuncion}
+                      </p>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </section>
@@ -668,7 +739,8 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
             <div className="border-b border-[#0F294A]/15 bg-[#EFF6FF] px-6 py-4">
               <h2 className="text-lg font-bold text-[#0F294A]">Objetivos específicos</h2>
               <p className="text-xs text-[#0F294A]/75">
-                Agrega, modifica o elimina objetivos específicos del procedimiento de bienestar
+                Cada objetivo específico conserva su propósito en Frikaz S.A.S. e indica el cargo
+                responsable y su función operativa
               </p>
             </div>
 
@@ -689,13 +761,41 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                             onChange={(e) => setEditingObjText(e.target.value)}
                             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-[#0F294A]"
                           />
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                            <div>
+                              <label className="mb-1 block text-[11px] font-semibold text-[#0F294A]">
+                                Responsable
+                              </label>
+                              <input
+                                type="text"
+                                value={editingObjResp}
+                                onChange={(e) => setEditingObjResp(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-[#0F294A]"
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="mb-1 block text-[11px] font-semibold text-[#0F294A]">
+                                Función breve del responsable
+                              </label>
+                              <input
+                                type="text"
+                                value={editingObjFunc}
+                                onChange={(e) => setEditingObjFunc(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-[#0F294A]"
+                              />
+                            </div>
+                          </div>
                           <div className="flex justify-end gap-2">
                             <button
                               type="button"
                               onClick={() => {
-                                updateObjetivoEspecifico(obj.id, objOriginalRef.current, {
-                                  silent: true,
-                                });
+                                updateObjetivoEspecifico(
+                                  obj.id,
+                                  objOriginalRef.current.texto,
+                                  { silent: true },
+                                  objOriginalRef.current.resp,
+                                  objOriginalRef.current.func
+                                );
                                 setEditingObjId(null);
                               }}
                               className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#0F294A]"
@@ -706,7 +806,13 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                               type="button"
                               onClick={() => {
                                 if (editingObjText.trim()) {
-                                  updateObjetivoEspecifico(obj.id, editingObjText.trim());
+                                  updateObjetivoEspecifico(
+                                    obj.id,
+                                    editingObjText.trim(),
+                                    undefined,
+                                    editingObjResp.trim() || 'Gerente',
+                                    editingObjFunc.trim()
+                                  );
                                   setEditingObjId(null);
                                 }
                               }}
@@ -718,19 +824,39 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                         </div>
                       ) : (
                         <>
-                          <div className="flex items-start gap-3">
+                          <div className="flex items-start gap-3 flex-1">
                             <span className="mt-0.5 font-mono text-sm font-bold text-[#D61F26] tabular-nums">
                               {idx + 1}.
                             </span>
-                            <p className="text-sm leading-relaxed text-slate-700">{obj.texto}</p>
+                            <div className="space-y-2 flex-1">
+                              <p className="text-sm leading-relaxed text-slate-700">{obj.texto}</p>
+                              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
+                                <span className="inline-flex items-center gap-1.5 font-bold text-[#0F294A]">
+                                  <UserCheck className="h-3.5 w-3.5 text-[#D61F26]" />
+                                  Responsable: {obj.responsable || 'Gerente'}
+                                </span>
+                                {obj.funcionResponsable && (
+                                  <p className="mt-0.5 text-slate-600 leading-relaxed">
+                                    <strong className="text-[#0F294A]">Función:</strong>{' '}
+                                    {obj.funcionResponsable}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
                           </div>
                           <div className="flex items-center gap-1 shrink-0 self-end sm:self-start">
                             <button
                               type="button"
                               onClick={() => {
-                                objOriginalRef.current = obj.texto;
+                                objOriginalRef.current = {
+                                  texto: obj.texto,
+                                  resp: obj.responsable || 'Gerente',
+                                  func: obj.funcionResponsable || '',
+                                };
                                 setEditingObjId(obj.id);
                                 setEditingObjText(obj.texto);
+                                setEditingObjResp(obj.responsable || 'Gerente');
+                                setEditingObjFunc(obj.funcionResponsable || '');
                               }}
                               className="rounded-md p-1.5 text-slate-500 hover:bg-[#FEF9C3] hover:text-[#0F294A]"
                               title="Editar objetivo específico"
@@ -757,20 +883,43 @@ export function ManualSection({ activeSubTab, onChangeSubTab }: ManualSectionPro
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!newObjText.trim()) return;
-                  addObjetivoEspecifico(newObjText.trim());
+                  addObjetivoEspecifico(
+                    newObjText.trim(),
+                    newObjResp.trim() || 'Gerente',
+                    newObjFunc.trim() ||
+                      'Coordinar, ejecutar y verificar el cumplimiento del objetivo en Frikaz S.A.S.'
+                  );
                   setNewObjText('');
+                  setNewObjResp('Gerente');
+                  setNewObjFunc('');
                 }}
                 className="rounded-xl border border-slate-200 bg-white p-4 space-y-3"
               >
                 <label className="block text-xs font-semibold text-[#0F294A]">
                   Agregar nuevo objetivo específico
                 </label>
-                <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <input
                     type="text"
                     value={newObjText}
                     onChange={(e) => setNewObjText(e.target.value)}
                     placeholder="Describe el nuevo objetivo específico..."
+                    className="sm:col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-[#0F294A] focus:border-[#0F294A] focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={newObjResp}
+                    onChange={(e) => setNewObjResp(e.target.value)}
+                    placeholder="Cargo responsable (Ej. Gerente)"
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-[#0F294A] focus:border-[#0F294A] focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    type="text"
+                    value={newObjFunc}
+                    onChange={(e) => setNewObjFunc(e.target.value)}
+                    placeholder="Función breve del responsable para este objetivo..."
                     className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-[#0F294A] focus:border-[#0F294A] focus:outline-none"
                   />
                   <button

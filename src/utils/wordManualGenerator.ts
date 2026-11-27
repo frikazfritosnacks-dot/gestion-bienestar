@@ -126,7 +126,7 @@ function apaHeading1(text: string, pageBreakBefore = false) {
       after: 120,
     },
     border: {
-      bottom: { style: BorderStyle.SINGLE, size: 6, color: COLOR_BLACK },
+      bottom: { style: BorderStyle.SINGLE, size: 6, color: COLOR_NAVY },
     },
     children: [
       new TextRun({
@@ -134,7 +134,7 @@ function apaHeading1(text: string, pageBreakBefore = false) {
         font: FONT_FAMILY,
         size: 28, // 14pt Times New Roman
         bold: true,
-        color: COLOR_BLACK,
+        color: COLOR_NAVY,
       }),
     ],
   });
@@ -159,7 +159,7 @@ function apaHeading2(text: string) {
         font: FONT_FAMILY,
         size: 24, // 12pt Times New Roman
         bold: true,
-        color: COLOR_BLACK,
+        color: COLOR_NAVY,
       }),
     ],
   });
@@ -320,9 +320,29 @@ function buildGroundedApaReferences(state: BienestarState): string[] {
   const refs = new Set<string>();
   const introLower = state.manual.introduccion.toLowerCase();
 
+  if (introLower.includes('chunga')) {
+    refs.add(
+      'Chunga Díaz, T. O., & Escuza Pasco, M. E. (2023). La importancia de la satisfacción laboral en el ámbito profesional: una revisión sistemática. Diversitas: Perspectivas en Psicología, 19(1), 127–143. https://doi.org/10.15332/22563067.9109'
+    );
+  }
+  if (introLower.includes('2466')) {
+    refs.add(
+      'Congreso de la República de Colombia. (2025). Ley 2466 de 2025, por medio de la cual se modifica parcialmente normas laborales y se adopta una reforma laboral para el trabajo decente y digno en Colombia.'
+    );
+  }
+  if (introLower.includes('garcía-rubiano') || introLower.includes('garcia-rubiano')) {
+    refs.add(
+      'García-Rubiano, M., Toro, R., Díaz-Fúnez, P. A., Mañas-Rodríguez, M. Á., Pazmay-Ramos, S. G., & Matabanchoy-Tulcan, S. M. (2024). El papel del clima organizacional como mediador entre la disposición al cambio y el bienestar eudaimónico. Suma Psicológica, 31(1), 37–44. https://doi.org/10.14349/sumapsi.2024.v31.n1.5'
+    );
+  }
   if (introLower.includes('max-neef')) {
     refs.add(
       'Max-Neef, M., Elizalde, A., & Hopenhayn, M. (1986). Desarrollo a escala humana: Una opción para el futuro.'
+    );
+  }
+  if (introLower.includes('mendoza-vargas')) {
+    refs.add(
+      'Mendoza-Vargas, J. M., Burbano-Pantoja, V. M. Á., & Mendoza-Vargas, H. H. (2022). Relación entre clima organizacional y desempeño laboral: estudio focalizado en el laboratorio empresarial LAEMCO en Tunja (Colombia). Información Tecnológica, 33(6), 157–166. https://doi.org/10.4067/S0718-07642022000600157'
     );
   }
   if (
@@ -331,6 +351,16 @@ function buildGroundedApaReferences(state: BienestarState): string[] {
   ) {
     refs.add(
       'Organización Mundial de la Salud. (2010). Entornos laborales saludables: Fundamentos y modelo de la OMS.'
+    );
+    if (introLower.includes('2022')) {
+      refs.add(
+        'Organización Mundial de la Salud. (2022). WHO guidelines on mental health at work. World Health Organization.'
+      );
+    }
+  }
+  if (introLower.includes('rosero-lasso')) {
+    refs.add(
+      'Rosero-Lasso, D. A., Chaucanes-Figueroa, J. J., & Chavez-Martinez, J. L. (2025). Relación entre clima organizacional y satisfacción laboral en el Centro Hospital Guaitarilla (Nariño-Colombia), 2023. Hacia la Promoción de la Salud, 30(2), 85–94. https://doi.org/10.17151/hpsal.2025.30.2.8'
     );
   }
 
@@ -849,6 +879,66 @@ function buildTerminologiaTable(state: BienestarState): Table {
   });
 }
 
+function buildConveniosResumenTable(state: BienestarState): Table {
+  const headerRow = new TableRow({
+    tableHeader: true,
+    cantSplit: true,
+    children: [
+      makeCell('Entidad oficial', { widthPct: 20, header: true, size: 18 }),
+      makeCell('Tipo', { widthPct: 16, header: true, size: 18 }),
+      makeCell('Actividades del Plan relacionadas', { widthPct: 24, header: true, size: 18 }),
+      makeCell('Beneficio / Estado de gestión', { widthPct: 20, header: true, size: 18 }),
+      makeCell('Canal oficial publicado', { widthPct: 20, header: true, size: 18 }),
+    ],
+  });
+
+  const dataRows = state.convenios.map((conv, idx) => {
+    const fill = idx % 2 === 1 ? COLOR_ZEBRA_BG : undefined;
+    const acts = (conv.actividadesPlan || []).join(', ') || conv.nombreConvenio;
+    const estado = conv.estadoGestion || 'Por consultar';
+    const tipoBen = conv.tipoBeneficio ? `${conv.tipoBeneficio} · ` : '';
+    const web = conv.paginaWebOficial || conv.datosContacto;
+    return new TableRow({
+      cantSplit: true,
+      children: [
+        makeCell(conv.entidad, {
+          widthPct: 20,
+          bold: true,
+          color: COLOR_BLACK,
+          fill,
+          valign: VerticalAlign.TOP,
+          size: 18,
+        }),
+        makeCell(conv.tipoEntidad || 'Institución', {
+          widthPct: 16,
+          fill,
+          valign: VerticalAlign.TOP,
+          size: 18,
+        }),
+        makeCell(acts, { widthPct: 24, fill, valign: VerticalAlign.TOP, size: 18 }),
+        makeCell(`${tipoBen}Estado: ${estado}`, {
+          widthPct: 20,
+          fill,
+          valign: VerticalAlign.TOP,
+          size: 18,
+        }),
+        makeCell(`${web} (${conv.datosContacto})`, {
+          widthPct: 20,
+          fill,
+          valign: VerticalAlign.TOP,
+          size: 18,
+        }),
+      ],
+    });
+  });
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    rows: [headerRow, ...dataRows],
+  });
+}
+
 function describeFlowRoute(step: ProcessStep, allSteps: ProcessStep[]): string {
   const byId = new Map(allSteps.map((s) => [s.id, s.actividad]));
   if (step.isDecision) {
@@ -1142,7 +1232,7 @@ export async function generateManualWordBlob(state: BienestarState): Promise<Blo
             font: FONT_FAMILY,
             size: 28, // 14pt
             bold: true,
-            color: COLOR_BLACK,
+            color: COLOR_NAVY,
           },
           paragraph: {
             spacing: { line: BODY_LINE_SPACING, before: 220, after: 120 },
@@ -1153,7 +1243,7 @@ export async function generateManualWordBlob(state: BienestarState): Promise<Blo
             font: FONT_FAMILY,
             size: 24, // 12pt
             bold: true,
-            color: COLOR_BLACK,
+            color: COLOR_NAVY,
           },
           paragraph: {
             spacing: { line: BODY_LINE_SPACING, before: 160, after: 80 },
@@ -1219,13 +1309,27 @@ export async function generateManualWordBlob(state: BienestarState): Promise<Blo
           apaHeading1('Objetivos'),
           apaHeading2('Objetivo general'),
           ...splitNarrativeParagraphs(state.manual.objetivoGeneral),
+          apaNarrativeParagraph(
+            `Responsable: ${state.manual.objetivoGeneralResponsable || 'Gerente'}.${
+              state.manual.objetivoGeneralFuncion
+                ? ` Función breve: ${state.manual.objetivoGeneralFuncion}`
+                : ''
+            }`,
+            { bold: false, indent: true }
+          ),
 
           apaHeading2('Objetivos específicos'),
           ...(state.manual.objetivosEspecificos.length === 0
             ? [apaNarrativeParagraph('No se han registrado objetivos específicos.')]
-            : state.manual.objetivosEspecificos.map((obj, idx) =>
-                apaNarrativeParagraph(`${idx + 1}. ${obj.texto}`)
-              )),
+            : state.manual.objetivosEspecificos.flatMap((obj, idx) => [
+                apaNarrativeParagraph(`${idx + 1}. ${obj.texto}`, { after: 30 }),
+                apaNarrativeParagraph(
+                  `Responsable: ${obj.responsable || 'Gerente'}.${
+                    obj.funcionResponsable ? ` Función: ${obj.funcionResponsable}` : ''
+                  }`,
+                  { indent: true, after: 80 }
+                ),
+              ])),
 
           // 4. Alcance
           apaHeading1('Alcance'),
@@ -1234,6 +1338,15 @@ export async function generateManualWordBlob(state: BienestarState): Promise<Blo
           // 5. Justificación
           apaHeading1('Justificación'),
           ...justParagraphs,
+
+          // 5b. Responsables del Plan de Bienestar
+          apaHeading1('Responsables del Plan de Bienestar'),
+          apaNarrativeParagraph(
+            `Cargo principal: ${state.responsablesPlan.cargoPrincipal}. ${state.responsablesPlan.alcanceResponsabilidad}`
+          ),
+          ...state.responsablesPlan.responsabilidades.map((r) =>
+            apaNarrativeParagraph(`${r.numero}. ${r.texto}`, { after: 50 })
+          ),
 
           // 6. Normograma
           apaHeading1('Normograma', true),
@@ -1252,7 +1365,7 @@ export async function generateManualWordBlob(state: BienestarState): Promise<Blo
           // 7. Flujograma (diagrama visual completo)
           apaHeading1('Flujograma', true),
           apaNarrativeParagraph(
-            `El diagrama visual de flujo representa integralmente la secuencia lógica del procedimiento de Bienestar Social Laboral de ${p.empresa} (${state.proceso.length} etapas), integrando inicio y finalización, actividades operativas, compuertas de decisión (SÍ / NO), ciclos de ajuste, conectores, flechas direccionales y responsables asignados.`
+            `El diagrama visual de flujo representa integralmente la secuencia lógica del procedimiento de Bienestar Social Laboral de ${p.empresa} (${state.proceso.length} etapas), integrando inicio y finalización, actividades operativas, compuertas de decisión (SÍ / NO), ciclos de ajuste, conectores, flechas direccionales y el cargo responsable (${state.responsablesPlan.cargoPrincipal}).`
           ),
           ...buildFlowchartVisualParagraphs(diagramPages, p.empresa, state.proceso.length),
         ],
@@ -1323,6 +1436,20 @@ export async function generateManualWordBlob(state: BienestarState): Promise<Blo
           buildTerminologiaTable(state),
           apaTableNote(
             `Terminología sincronizada integralmente desde la plataforma (${state.terminologia.length} conceptos definidos).`
+          ),
+
+          // Opciones verificadas de convenios y alianzas externas (informativo)
+          apaHeading1('Opciones de Alianzas y Convenios Estratégicos', true),
+          apaNarrativeParagraph(
+            `La Tabla 4 presenta el directorio de ${state.convenios.length} entidades verificadas en fuentes oficiales colombianas como opciones reales de contacto y gestión para ${p.empresa}. Estas entidades no corresponden a convenios vigentes firmados en este momento; su gestión corresponde a la ${state.responsablesPlan.cargoPrincipal}.`
+          ),
+          ...apaTableCaption(
+            4,
+            `Opciones verificadas de contacto y gestión externa para el Plan de Bienestar de ${p.empresa} (no vigentes como convenios firmados)`
+          ),
+          buildConveniosResumenTable(state),
+          apaTableNote(
+            'Las actividades internas como flexibilidad horaria, cumpleaños, Trabajador del mes, desayunos comunitarios y bonos familiares son gestionadas directamente por la Gerente.'
           ),
 
           // Referencias (APA 7ª edición)

@@ -6,6 +6,7 @@ import {
   FileSpreadsheet,
   GitFork,
   HeartHandshake,
+  UserCheck,
 } from 'lucide-react';
 import { useBienestar } from '../../context/BienestarContext';
 import { SectionId } from '../../types/bienestar';
@@ -49,11 +50,21 @@ export function InicioSection({ onSelectSection }: InicioSectionProps) {
       id: 'manual',
       title: 'Manual',
       description:
-        'Consulta y edita la introducción, objetivos, justificación, alcance, normograma, terminología y descarga el documento oficial en Word (.docx).',
+        'Consulta y edita la introducción, objetivos con responsables, justificación, alcance, normograma, terminología y descarga el documento oficial en Word (.docx).',
       detail: `${state.normograma.length} normas · ${state.terminologia.length} términos · Word (.docx)`,
       icon: BookOpen,
       accent: 'border-[#0F294A]/20 hover:border-[#0F294A]',
       iconBg: 'bg-[#0F294A] text-[#FACC15]',
+    },
+    {
+      id: 'responsables',
+      title: 'Responsables del Plan de Bienestar',
+      description:
+        'Define la conducción directa de la Gerente como única responsable principal de todas las actividades del Plan 2027 y sus 10 funciones clave.',
+      detail: `Cargo: ${state.responsablesPlan.cargoPrincipal} · ${state.responsablesPlan.responsabilidades.length} responsabilidades`,
+      icon: UserCheck,
+      accent: 'border-[#0F294A]/20 hover:border-[#0F294A]',
+      iconBg: 'bg-[#0F294A] text-white',
     },
     {
       id: 'matriz',
@@ -79,8 +90,8 @@ export function InicioSection({ onSelectSection }: InicioSectionProps) {
       id: 'programas',
       title: 'Programas de Bienestar',
       description:
-        'Plan Anual 2027 (10 trabajadores): 8 dimensiones, 9 fichas de actividades, Presupuesto General 2027 editable con aprobación de Gerencia, Cronograma y Gantt 2027, Seguimiento e Indicadores reales, Encuestas, Asistencia, convenios y formatos institucionales en blanco.',
-      detail: `${state.planBienestar.length} actividades · Presupuesto 2027 · Seguimiento, Encuestas y Asistencia`,
+        'Plan Anual 2027 (10 trabajadores): 8 dimensiones, 9 fichas de actividades, Pausas Activas Interactivas, Presupuesto General 2027, Cronograma y Gantt 2027, Seguimiento, Encuestas, Asistencia, Convenios verificados y 24 formatos.',
+      detail: `${state.planBienestar.length} actividades · Pausas Activas · Presupuesto 2027 · Convenios`,
       icon: HeartHandshake,
       accent: 'border-[#FCA5A5] bg-gradient-to-br from-[#FEF2F2]/60 via-white to-[#FFFBEB] hover:border-[#D61F26]',
       iconBg: 'bg-[#D61F26] text-[#FACC15]',
@@ -115,8 +126,8 @@ export function InicioSection({ onSelectSection }: InicioSectionProps) {
         </div>
       </section>
 
-      {/* Cuadrícula limpia de los 4 espacios de trabajo */}
-      <section aria-label="Secciones principales" className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      {/* Cuadrícula limpia de los 5 espacios de trabajo */}
+      <section aria-label="Secciones principales" className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {modules.map((mod, idx) => {
           const Icon = mod.icon;
           return (
@@ -130,7 +141,9 @@ export function InicioSection({ onSelectSection }: InicioSectionProps) {
               transition={{ duration: 0.25, delay: idx * 0.05 }}
               whileHover={{ y: -3 }}
               whileTap={{ scale: 0.99 }}
-              className={`group flex flex-col justify-between rounded-2xl border-2 bg-white p-7 text-left shadow-xs transition-all cursor-pointer ${mod.accent}`}
+              className={`group flex flex-col justify-between rounded-2xl border-2 bg-white p-7 text-left shadow-xs transition-all cursor-pointer ${
+                mod.id === 'programas' ? 'md:col-span-2 lg:col-span-2' : ''
+              } ${mod.accent}`}
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

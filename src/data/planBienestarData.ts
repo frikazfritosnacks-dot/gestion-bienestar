@@ -14,13 +14,12 @@ export const PLAN_GENERAL_INITIAL: PlanGeneralInfo = {
   empresa: 'Frikaz S.A.S.',
   vigenciaAnual: '2027',
   objetivoGeneral:
-    'Guiar a la gerencia y al área de Gestión del Talento Humano en la implementación integral y sostenible del Plan Anual de Bienestar Social Laboral 2027 para las ocho dimensiones personales de los 10 trabajadores de Frikaz S.A.S., priorizando actividades económicas, cercanas y de alto impacto humano.',
+    'Guiar a la Gerente en la implementación integral y sostenible del Plan Anual de Bienestar Social Laboral 2027 para las ocho dimensiones personales de los 10 trabajadores de Frikaz S.A.S., priorizando actividades económicas, cercanas y de alto impacto humano.',
   alcance:
-    'Aplica a la totalidad de los 10 colaboradores vinculados a Frikaz S.A.S. en las áreas administrativa, operativa y logística durante la vigencia de enero a diciembre de 2027, integrando acciones hacia su núcleo familiar.',
+    'Aplica a la totalidad de los 10 colaboradores vinculados a Frikaz S.A.S. en las áreas administrativa, operativa y logística durante la vigencia de enero a diciembre de 2027, integrando acciones hacia su núcleo familiar bajo responsabilidad de la Gerente.',
   poblacionBeneficiaria:
     '10 trabajadores de Frikaz S.A.S. (planta operativa, logística y administración) y sus familias.',
-  responsables:
-    'Gestión del Talento Humano, Gerencia General, Seguridad y Salud en el Trabajo (SST), Contabilidad y Comité de Bienestar.',
+  responsables: 'Gerente (única responsable principal del Plan de Bienestar Social Laboral 2027).',
 };
 
 export const DIMENSIONES_BIENESTAR: DimensionInfo[] = [
@@ -204,15 +203,15 @@ export const ACTIVIDADES_INICIALES: ProgramaBienestar[] = [
       'Prevenir la fatiga física y las lesiones osteomusculares en los 10 trabajadores mediante rutinas breves de movilidad articular y estiramiento durante la jornada.',
     objetivoGeneralPrograma: OBJETIVO_GENERAL_PROGRAMA,
     metodologia:
-      'Sesiones prácticas presenciales de 10 a 15 minutos guiadas por el responsable SST o un líder de turno usando guías internas y recursos existentes en planta y oficina.',
+      'Sesiones prácticas presenciales de 10 a 15 minutos guiadas por la Gerente o mediante la guía interactiva de Pausas Activas en planta y oficina.',
     descripcion:
       'Rutinas diarias de activación física y estiramiento en los puestos y áreas existentes de Frikaz S.A.S.',
     descripcionDetallada:
-      'Todos los días laborales de enero a diciembre de 2027 se realiza una pausa de descarga muscular (cuello, hombros, espalda, muñecas y piernas) apoyada en guías visuales internas y música ambiental sin contrataciones externas.',
+      'Todos los días laborales de enero a diciembre de 2027 se realiza una pausa de descarga muscular (cuello, hombros, espalda, muñecas y piernas) apoyada en guías visuales internas y en el módulo interactivo de Pausas Activas sin contrataciones externas.',
     justificacion:
       'Las labores operativas, logísticas y administrativas repetitivas generan tensión muscular; aprovechar los espacios existentes con guías internas mantiene la salud física con inversión mínima.',
     poblacionParticipante: '10 trabajadores de Frikaz S.A.S. (áreas operativa, logística y administrativa)',
-    responsable: 'Seguridad y Salud en el Trabajo (SST) y Gestión del Talento Humano',
+    responsable: 'Gerente',
     recursosNecesarios: '6 guías visuales impresas/plastificadas ($30.000), guías digitales internas y espacios existentes de la empresa.',
     presupuesto: 30000,
     presupuestoEjecutado: 0,
@@ -244,7 +243,7 @@ export const ACTIVIDADES_INICIALES: ProgramaBienestar[] = [
       'Brindar una jornada semanal de distensión mental e interacción lúdica usando juegos reutilizables para disminuir el estrés cotidiano en un equipo pequeño.',
     objetivoGeneralPrograma: OBJETIVO_GENERAL_PROGRAMA,
     metodologia:
-      'Habilitación de estación con juegos de mesa reutilizables (parqués, dominó, UNO y Jenga) en el espacio de descanso, realizando una jornada semanal de integración entre los 10 trabajadores.',
+      'Habilitación de estación con juegos de mesa reutilizables (parqués, dominó, UNO y Jenga) en el espacio de descanso, coordinada por la Gerente durante una jornada semanal de integración.',
     descripcion:
       'Jornada semanal recreativa con juegos de mesa reutilizables durante los descansos.',
     descripcionDetallada:
@@ -252,7 +251,7 @@ export const ACTIVIDADES_INICIALES: ProgramaBienestar[] = [
     justificacion:
       'El esparcimiento cognitivo periódico con recursos duraderos y reutilizables reduce la carga mental sin generar gastos recurrentes para la MiPyme.',
     poblacionParticipante: '10 trabajadores de Frikaz S.A.S.',
-    responsable: 'Gestión del Talento Humano y Comité de Bienestar',
+    responsable: 'Gerente',
     recursosNecesarios: '1 kit de parqués y dominó ($65.000) + 1 kit de cartas UNO y Jenga reutilizables ($55.000), mesa y sillas existentes.',
     presupuesto: 120000,
     presupuestoEjecutado: 0,
@@ -284,16 +283,16 @@ export const ACTIVIDADES_INICIALES: ProgramaBienestar[] = [
       'Fortalecer la educación económica práctica de los 10 trabajadores en presupuesto familiar, ahorro y manejo responsable de deudas mediante capacitaciones trimestrales.',
     objetivoGeneralPrograma: OBJETIVO_GENERAL_PROGRAMA,
     metodologia:
-      'Cuatro talleres presenciales gratuitos o dictados con apoyo interno de Contabilidad / Caja de Compensación en marzo, junio, septiembre y diciembre, entregando cartillas impresas prácticas.',
+      'Cuatro talleres presenciales gratuitos coordinados por la Gerente —apoyándose en recursos públicos como Saber Más, Ser Más, SENA o Caja de Compensación— en marzo, junio, septiembre y diciembre, entregando cartillas impresas prácticas.',
     descripcion:
-      'Capacitaciones trimestrales de finanzas personales aprovechando recursos internos y alianzas sin costo de honorarios.',
+      'Capacitaciones trimestrales de finanzas personales aprovechando recursos internos y opciones gratuitas externas.',
     descripcionDetallada:
       'En marzo, junio, septiembre y diciembre de 2027 se imparten sesiones prácticas de 60 minutos sobre control de gastos, fondo de emergencia familiar y metas de ahorro, con inversión exclusiva en papelería y cartillas ($80.000/año).',
     justificacion:
       'Priorizar capacitaciones gratuitas o internas mantiene la sostenibilidad financiera de Frikaz S.A.S. mientras mejora la tranquilidad económica de sus 10 colaboradores.',
     poblacionParticipante: '10 trabajadores de Frikaz S.A.S.',
-    responsable: 'Contabilidad y Gestión del Talento Humano (con apoyo de Caja de Compensación)',
-    recursosNecesarios: 'Facilitación interna/aliada sin costo, 40 cartillas impresas y papelería ($80.000), sala interna de reuniones.',
+    responsable: 'Gerente',
+    recursosNecesarios: 'Facilitación gratuita/aliada, 40 cartillas impresas y papelería ($80.000), sala interna de reuniones.',
     presupuesto: 80000,
     presupuestoEjecutado: 0,
     presupuestoEstado: 'Propuesta pendiente de aprobación — Papelería y cartillas 2027',
@@ -324,15 +323,15 @@ export const ACTIVIDADES_INICIALES: ProgramaBienestar[] = [
       'Apoyar la economía del hogar y fortalecer el vínculo familiar de los 10 colaboradores mediante la entrega semestral de bonos de productos Frikaz / canasta familiar.',
     objetivoGeneralPrograma: OBJETIVO_GENERAL_PROGRAMA,
     metodologia:
-      'Entrega directa en junio y diciembre de 2027 de un bono de $15.000 por trabajador (2 bonos al año por persona = 20 bonos totales), priorizando productos propios o canasta familiar sin gastos logísticos externos.',
+      'Entrega directa en junio y diciembre de 2027 coordinada por la Gerente de un bono de $15.000 por trabajador (2 bonos al año por persona = 20 bonos totales), priorizando productos propios o canasta familiar sin gastos logísticos externos.',
     descripcion:
       'Entrega semestral (junio y diciembre) de bonos de productos para las familias de los 10 trabajadores.',
     descripcionDetallada:
-      'Cada trabajador recibe dos bonos durante 2027 (uno en junio y otro en diciembre) por valor unitario de $15.000 COP, alcanzando a las 10 familias de la empresa de forma sencilla y equitativa ($300.000 anuales).',
+      'Cada trabajador recibe dos bonos durante 2027 (uno en junio y otro en diciembre) por valor unitario de $15.000 COP, alcanzando a las 10 familias de la empresa de forma sencilla y equitativa ($300.000 anuales), sujeto a aprobación presupuestal.',
     justificacion:
       'Es una alternativa realista para una MiPyme frente a eventos externos costosos, generando beneficio tangible directo en la mesa de cada familia trabajadora.',
     poblacionParticipante: '10 trabajadores y sus núcleos familiares',
-    responsable: 'Gerencia General y Gestión del Talento Humano',
+    responsable: 'Gerente',
     recursosNecesarios: '20 bonos familiares de $15.000 ($300.000) y planilla de control de entrega firmada.',
     presupuesto: 300000,
     presupuestoEjecutado: 0,
@@ -364,15 +363,15 @@ export const ACTIVIDADES_INICIALES: ProgramaBienestar[] = [
       'Fortalecer la cercanía, comunicación horizontal y compañerismo entre los 10 colaboradores mediante un desayuno comunitario mensual compartido en sede.',
     objetivoGeneralPrograma: OBJETIVO_GENERAL_PROGRAMA,
     metodologia:
-      'Un encuentro mensual de enero a diciembre de 2027 en el espacio de cafetería interno, sirviendo 10 desayunos sencillos de $8.000 c/u ($80.000/mes) con espacio de diálogo abierto.',
+      'Un encuentro mensual de enero a diciembre de 2027 coordinado por la Gerente en el espacio de cafetería interno, sirviendo 10 desayunos sencillos de $8.000 c/u ($80.000/mes) con diálogo abierto.',
     descripcion:
       'Desayuno comunitario mensual para los 10 trabajadores de Frikaz S.A.S. durante los 12 meses de 2027.',
     descripcionDetallada:
       'Cada fin de mes se reúnen los 10 integrantes de planta, logística y administración para compartir un desayuno de $8.000 por persona (120 desayunos al año = $960.000 COP) promoviendo la escucha y la integración sin alquiler de salones.',
     justificacion:
-      'En una empresa pequeña de 10 personas, un desayuno mensual interno es la actividad de mayor impacto en clima laboral y cohesión diaria con costo controlado.',
+      'En una empresa pequeña de 10 personas, un desayuno mensual interno es una actividad de alto impacto en clima laboral y cohesión diaria con costo controlado.',
     poblacionParticipante: '10 trabajadores de Frikaz S.A.S.',
-    responsable: 'Gestión del Talento Humano y Gerencia',
+    responsable: 'Gerente',
     recursosNecesarios: '120 desayunos durante el año a $8.000 c/u ($960.000) y comedor/cafetería interna.',
     presupuesto: 960000,
     presupuestoEjecutado: 0,
@@ -404,15 +403,15 @@ export const ACTIVIDADES_INICIALES: ProgramaBienestar[] = [
       'Conmemorar el Día de la Mujer (marzo) y el Día del Hombre (junio) con un detalle sencillo y un espacio cálido de reconocimiento a la equidad en Frikaz S.A.S.',
     objetivoGeneralPrograma: OBJETIVO_GENERAL_PROGRAMA,
     metodologia:
-      'Activación interna breve en marzo y junio de 2027 con palabras de agradecimiento, entrega de detalle sencillo de $10.000 por colaborador y compartir en sede.',
+      'Activación interna breve en marzo y junio de 2027 organizada por la Gerente con palabras de agradecimiento, entrega de detalle sencillo de $10.000 por colaborador y compartir en sede.',
     descripcion:
       'Conmemoración interna sencilla del Día de la Mujer (marzo) y del Día del Hombre (junio) para los 10 trabajadores.',
     descripcionDetallada:
-      'Se realizan dos actos conmemorativos internos (8 de marzo y junio 2027) entregando un detalle económico y significativo a cada colaborador homenajeado (presupuesto anual total: $100.000 COP).',
+      'Se realizan dos actos conmemorativos internos (marzo y junio de 2027) entregando un detalle económico y significativo a cada colaborador homenajeado (presupuesto anual total: $100.000 COP).',
     justificacion:
       'Reconocer estas fechas con sencillez, equidad y calidez humana fortalece la cultura de respeto mutuo dentro de un presupuesto acorde a la MiPyme.',
     poblacionParticipante: '10 trabajadores de Frikaz S.A.S. (mujeres en marzo y hombres en junio)',
-    responsable: 'Gestión del Talento Humano y Comité de Bienestar',
+    responsable: 'Gerente',
     recursosNecesarios: '10 detalles conmemorativos sencillos ($100.000) y tarjetas internas de reconocimiento.',
     presupuesto: 100000,
     presupuestoEjecutado: 0,
@@ -444,28 +443,28 @@ export const ACTIVIDADES_INICIALES: ProgramaBienestar[] = [
       'Facilitar flexibilidad horaria en fechas especiales previamente autorizadas para atender diligencias familiares, académicas o personales sin afectar la operación.',
     objetivoGeneralPrograma: OBJETIVO_GENERAL_PROGRAMA,
     metodologia:
-      'Solicitud previa con 5 días de anticipación mediante formato interno de Gestión del Talento Humano y visto bueno del líder inmediato para reajuste o compensación horaria en fechas especiales.',
+      'Solicitud previa con 5 días de anticipación ante la Gerente, sujeta a autorización de la Gerencia y a la necesidad operativa de las áreas para el reajuste o compensación horaria en fechas especiales.',
     descripcion:
-      'Beneficio de flexibilidad horaria en fechas especiales previamente autorizadas durante 2027 (sin gasto presupuestal directo).',
+      'Beneficio de flexibilidad horaria en fechas especiales sujeto a autorización de la Gerente y necesidad operativa ($0 de gasto directo).',
     descripcionDetallada:
-      'Disponible de enero a diciembre de 2027 para los 10 trabajadores mediante coordinación escalonada de turnos en fechas significativas o diligencias personales prioritarias. No requiere asignación presupuestal ($0).',
+      'Disponible de enero a diciembre de 2027 para los 10 trabajadores mediante coordinación escalonada de turnos aprobada por la Gerente según la carga operativa de planta, logística y administración. No requiere asignación presupuestal ($0).',
     justificacion:
-      'El tiempo flexible organizado es un beneficio altamente valorado por los trabajadores que no genera desembolsos financieros para la empresa.',
+      'El tiempo flexible organizado bajo autorización de la Gerente es un beneficio altamente valorado por los trabajadores que protege la operación y no genera desembolsos financieros.',
     poblacionParticipante: '10 trabajadores de Frikaz S.A.S.',
-    responsable: 'Jefes de Área y Gestión del Talento Humano',
+    responsable: 'Gerente',
     recursosNecesarios: 'Formato digital interno de autorización horaria y cuadro de programación de turnos ($0).',
     presupuesto: 0,
     presupuestoEjecutado: 0,
-    presupuestoEstado: 'Sin costo directo empresarial ($0) — Pendiente de aprobación',
+    presupuestoEstado: 'Sin costo directo empresarial ($0) — Sujeto a autorización de la Gerente',
     fechaInicio: '2027-01-15',
     fechaFin: '2027-12-30',
     fechaEjecucion: '2027-01-15',
     duracionEstimada: 'Bloques de 2 a 4 horas según autorización',
     horaInicio: '08:00',
     horaFin: '12:00',
-    cronogramaTexto: 'Fechas especiales previamente autorizadas durante todo el año 2027.',
+    cronogramaTexto: 'Fechas especiales previamente autorizadas por la Gerente durante 2027.',
     mesesCronograma: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    frecuencia: 'Fechas especiales previamente autorizadas (2027)',
+    frecuencia: 'Fechas especiales autorizadas por la Gerente (2027)',
     lugar: 'Gestión interna por áreas en Frikaz S.A.S.',
     estadoAprobacion: 'Pendiente de aprobación',
     estadoEjecucion: 'Programada',
@@ -484,7 +483,7 @@ export const ACTIVIDADES_INICIALES: ProgramaBienestar[] = [
       'Fomentar el afecto entre compañeros y el sentido de pertenencia celebrando el cumpleaños de cada trabajador mediante iniciativa voluntaria del equipo.',
     objetivoGeneralPrograma: OBJETIVO_GENERAL_PROGRAMA,
     metodologia:
-      'Saludo institucional con tarjeta digital firmada por la empresa y compartir voluntario autogestionado entre los compañeros en la fecha de cumpleaños de cada trabajador.',
+      'La Gerente coordina el calendario anual y entrega el saludo institucional con tarjeta digital, promoviendo un compartir voluntario entre compañeros sin generar gasto directo empresarial.',
     descripcion:
       'Celebración voluntaria de cumpleaños asumida entre compañeros y acompañada con saludo institucional ($0 de presupuesto empresarial).',
     descripcionDetallada:
@@ -492,11 +491,11 @@ export const ACTIVIDADES_INICIALES: ProgramaBienestar[] = [
     justificacion:
       'Mantiene viva la cercanía y el salario emocional del equipo aprovechando la solidaridad espontánea entre compañeros sin sobrecargar el presupuesto de la empresa.',
     poblacionParticipante: '10 trabajadores de Frikaz S.A.S. según mes de cumpleaños',
-    responsable: 'Gestión del Talento Humano (coordinación de calendario) y Compañeros de equipo',
-    recursosNecesarios: 'Calendario interno de cumpleaños y tarjeta digital institucional ($0 — celebración voluntaria entre compañeros).',
+    responsable: 'Gerente',
+    recursosNecesarios: 'Calendario interno de cumpleaños y tarjeta digital institucional ($0 — celebración voluntaria sin gasto empresarial).',
     presupuesto: 0,
     presupuestoEjecutado: 0,
-    presupuestoEstado: 'Sin asignación presupuestal ($0 — voluntaria) — Pendiente de aprobación',
+    presupuestoEstado: 'Sin asignación presupuestal ($0 — voluntaria)',
     fechaInicio: '2027-01-01',
     fechaFin: '2027-12-31',
     fechaEjecucion: '2027-01-15',
@@ -524,19 +523,19 @@ export const ACTIVIDADES_INICIALES: ProgramaBienestar[] = [
       'Exaltar mensualmente al colaborador sobresaliente por su puntualidad, calidad, compañerismo y compromiso con Frikaz S.A.S.',
     objetivoGeneralPrograma: OBJETIVO_GENERAL_PROGRAMA,
     metodologia:
-      'Evaluación mensual transparente entre líderes y equipo, publicación en cartelera interna y entrega de diploma más reconocimiento por valor de $30.000 mensuales (12 entregas al año).',
+      'Evaluación mensual transparente realizada por la Gerente con base en criterios objetivos de puntualidad, calidad, actitud y trabajo en equipo, publicación en cartelera interna y entrega de diploma más incentivo ($30.000/mes) sujeto a aprobación presupuestal.',
     descripcion:
-      'Selección y reconocimiento mensual al Trabajador del Mes durante los 12 meses de 2027.',
+      'Selección y reconocimiento mensual al Trabajador del Mes durante los 12 meses de 2027 (sujeto a aprobación presupuestal).',
     descripcionDetallada:
-      'Cada cierre de mes de enero a diciembre de 2027 se elige al Trabajador del Mes y se realiza un acto breve frente a los 10 compañeros entregando diploma y reconocimiento de $30.000 ($360.000 anuales).',
+      'Cada cierre de mes de enero a diciembre de 2027 la Gerente selecciona al Trabajador del Mes según criterios claros y realiza un acto breve frente a los 10 compañeros entregando diploma y reconocimiento de $30.000 ($360.000 anuales, sujeto a disponibilidad y aprobación presupuestal).',
     justificacion:
-      'El reconocimiento mensual constante con inversión realista ($30.000/mes) incentiva la excelencia diaria y el orgullo de pertenecer a Frikaz S.A.S.',
+      'El reconocimiento mensual constante con criterios transparentes e inversión realista ($30.000/mes) incentiva la excelencia diaria y el orgullo de pertenecer a Frikaz S.A.S.',
     poblacionParticipante: '10 trabajadores de Frikaz S.A.S.',
-    responsable: 'Gerencia General y Gestión del Talento Humano',
-    recursosNecesarios: '12 reconocimientos mensuales de $30.000 ($360.000), diplomas impresos y cartelera interna.',
+    responsable: 'Gerente',
+    recursosNecesarios: '12 reconocimientos mensuales de $30.000 ($360.000 sujetos a aprobación), diplomas impresos y cartelera interna.',
     presupuesto: 360000,
     presupuestoEjecutado: 0,
-    presupuestoEstado: 'Propuesta pendiente de aprobación — 12 reconocimientos mensuales',
+    presupuestoEstado: 'Propuesta pendiente de aprobación — Sujeto a presupuesto de Gerencia',
     fechaInicio: '2027-01-29',
     fechaFin: '2027-12-23',
     fechaEjecucion: '2027-01-29',
@@ -718,43 +717,329 @@ export const LISTAS_ASISTENCIA_INICIALES: ListaAsistenciaActividad[] = [];
 
 export const CONVENIOS_INICIALES: ConvenioItem[] = [
   {
-    id: 'conv-1',
-    nombreConvenio: 'Convenio Educación Financiera y Bienestar Familiar',
-    entidad: 'Caja de Compensación Familiar',
-    datosContacto: 'Asesora MiPymes: Mariana Zuluaga · Tel. (604) 360 7080 · pymes@caja.org.co',
+    id: 'conv-compensar',
+    nombreConvenio: 'Opción de afiliación y programas empresariales – Compensar',
+    entidad: 'Compensar – Caja de Compensación Familiar (Bogotá D.C.)',
+    tipoEntidad: 'Caja de Compensación Familiar',
+    actividadesPlan: [
+      'Capacitaciones financieras',
+      'Juegos de mesa',
+      'Bonos de productos para las familias',
+      'Celebraciones del Día de la Mujer y del Hombre',
+    ],
+    serviciosProgramas:
+      'Programas de bienestar laboral, formación empresarial (Propulsor Compensar), recreación, deporte, cultura, turismo familiar y Tienda Compensar.',
     beneficios:
-      'Capacitaciones gratuitas en finanzas personales para los 10 trabajadores, acceso a parques recreativos y orientación sobre subsidio familiar.',
-    vigencia: '01/01/2027 al 31/12/2027',
-    responsable: 'Gestión del Talento Humano',
+      'Acceso a subsidio familiar, cobertura recreativa y cultural con tarifas subsidiadas según categoría salarial para trabajadores y sus familias, y portafolio de bienestar corporativo.',
+    requisitosCondiciones:
+      'Afiliación como empleador persona jurídica en Colombia presentando cédula del representante legal, RUT (<30 días), Cámara de Comercio vigente, relación de trabajadores/salarios y aporte parafiscal legal del 4 % vía PILA.',
+    condicionesMiPyme:
+      'Disponible para MiPymes formalmente constituidas y afiliadas. Servicios de formación empresarial o eventos corporativos a medida se cotizan según alcance.',
+    datosContacto:
+      'Línea Empresas Bogotá: (601) 307 7001 · Correo publicado educación empresarial: educacionempresarial@compensar.com',
+    paginaWebOficial: 'https://corporativo.compensar.com',
+    enlaceDirecto: 'https://corporativo.compensar.com/empresas',
+    tipoBeneficio: 'Subsidiado / Tarifa afiliado',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial Compensar Empresas (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por gestionar (opción de contacto, sin convenio vigente)',
+    responsable: 'Gerente',
   },
   {
-    id: 'conv-2',
-    nombreConvenio: 'Programa Preventivo de Ergonomía y Pausas Saludables',
-    entidad: 'ARL Riesgos Laborales',
-    datosContacto: 'Consultora SST: Ing. Paola Vélez · Tel. 01 8000 511 414 · sst.pymes@arl.com.co',
+    id: 'conv-colsubsidio',
+    nombreConvenio: 'Opción de afiliación y bienestar corporativo – Colsubsidio',
+    entidad: 'Colsubsidio – Caja de Compensación Familiar (Bogotá D.C.)',
+    tipoEntidad: 'Caja de Compensación Familiar',
+    actividadesPlan: [
+      'Capacitaciones financieras',
+      'Desayunos comunitarios',
+      'Celebraciones del Día de la Mujer y del Hombre',
+      'Bonos de productos para las familias',
+    ],
+    serviciosProgramas:
+      'Bienestar corporativo, salud preventiva, recreación, clubes, centros vacacionales, bibliotecas, cultura y soluciones de educación financiera y crédito.',
     beneficios:
-      'Guías digitales y asesoría sin costo en pausas activas, higiene postural y prevención de fatiga osteomuscular.',
-    vigencia: '01/01/2027 al 31/12/2027',
-    responsable: 'Seguridad y Salud en el Trabajo (SST)',
+      'Tarifas subsidiadas por categoría de afiliación en recreación, educación y salud para los trabajadores y su núcleo familiar, más gestión digital en Portal Transaccional de Empresas.',
+    requisitosCondiciones:
+      'Afiliación empresarial mediante formulario en Portal de Empresas, certificado de existencia y representación legal, RUT y pago regular del aporte legal del 4 % sobre nómina.',
+    condicionesMiPyme:
+      'Aplica a micro y pequeñas empresas en Bogotá y Cundinamarca con trabajadores vinculados por contrato laboral.',
+    datosContacto:
+      'Línea Empresas Bogotá: (601) 745 7900 / Sede (601) 742 0100 · Nacional: 01 8000 947 900 · Correo: servicioalcliente@colsubsidio.com',
+    paginaWebOficial: 'https://www.colsubsidio.com',
+    enlaceDirecto: 'https://www.colsubsidio.com/empresas',
+    tipoBeneficio: 'Subsidiado / Tarifa afiliado',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial Colsubsidio Empresas (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por gestionar (opción de contacto, sin convenio vigente)',
+    responsable: 'Gerente',
   },
   {
-    id: 'conv-3',
-    nombreConvenio: 'Alianza de Descuentos Educativos y Formación Técnica',
-    entidad: 'Red de Instituciones Técnicas',
-    datosContacto: 'Coordinación Académica: Andrés Saldarriaga · Tel. (604) 444 9210 · empresas@rededucativa.edu.co',
+    id: 'conv-cafam',
+    nombreConvenio: 'Opción de afiliación y programas MiPymes – Cafam',
+    entidad: 'Cafam – Caja de Compensación Familiar (Bogotá D.C.)',
+    tipoEntidad: 'Caja de Compensación Familiar',
+    actividadesPlan: [
+      'Capacitaciones financieras',
+      'Juegos de mesa',
+      'Celebraciones del Día de la Mujer y del Hombre',
+    ],
+    serviciosProgramas:
+      'Estrategia Proyecta MiPymes, Centro de Bienestar La Candelaria, eventos y recreación familiar, formación complementaria y habilidades socioemocionales.',
     beneficios:
-      'Descuento del 15 % al 20 % en cursos cortos de manipulación de alimentos, excel y logística para los 10 colaboradores y sus familias.',
-    vigencia: '01/01/2027 al 31/12/2027',
-    responsable: 'Gestión del Talento Humano',
+      'Acompañamiento para fortalecimiento MiPyme, acceso subsidiado a espacios de bienestar, recreación familiar y programas formativos según categoría de aporte.',
+    requisitosCondiciones:
+      'Carta de solicitud firmada por representante legal, Cámara de Comercio vigente (<= 1 mes), relación de trabajadores y salarios, RUT, cédula del representante legal y pago PILA del 4 %.',
+    condicionesMiPyme:
+      'Cuenta con línea específica Proyecta MiPymes orientada a empresas pequeñas en Bogotá y su área de cobertura.',
+    datosContacto:
+      'Sede Administrativa Av. Cra. 68 No. 90-88 Bogotá · Línea integral de atención: (601) 307 7011 · Correo: Información no disponible en la fuente oficial consultada',
+    paginaWebOficial: 'https://www.cafam.com.co',
+    enlaceDirecto: 'https://www.cafam.com.co/empresas',
+    tipoBeneficio: 'Subsidiado / Tarifa afiliado',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial Cafam Empresas (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por gestionar (opción de contacto, sin convenio vigente)',
+    responsable: 'Gerente',
   },
   {
-    id: 'conv-4',
-    nombreConvenio: 'Suministro Económico de Desayunos Comunitarios',
-    entidad: 'Panadería y Cafetería Aliada Local',
-    datosContacto: 'Administradora: Sofía Montoya · Tel. 314 782 9034 · pedidos@aliadolocal.com',
+    id: 'conv-sena',
+    nombreConvenio: 'Opción de formación complementaria gratuita – SENA',
+    entidad: 'SENA – Servicio Nacional de Aprendizaje (Bogotá / Nacional)',
+    tipoEntidad: 'SENA',
+    actividadesPlan: ['Capacitaciones financieras', 'Transversal'],
+    serviciosProgramas:
+      'Formación complementaria presencial y virtual (LMS Zajuna) en habilidades socioemocionales, comunicación, trabajo en equipo, herramientas administrativas, finanzas básicas y gestión operativa.',
     beneficios:
-      'Tarifa fija de $8.000 por desayuno comunitario mensual para los 10 trabajadores durante todo el año 2027.',
-    vigencia: '01/01/2027 al 31/12/2027',
-    responsable: 'Gestión del Talento Humano y Contabilidad',
+      'Formación pública certificada 100 % gratuita para trabajadores y empresas colombianas, sin cobro de matrícula ni honorarios docentes.',
+    requisitosCondiciones:
+      'Inscripción individual de los trabajadores en la oferta abierta o solicitud de grupo cerrado empresarial ante el Centro de Formación según disponibilidad y cupo mínimo.',
+    condicionesMiPyme:
+      'Totalmente accesible para micro y pequeñas empresas; en modalidad virtual cada colaborador puede cursar sin mínimo de grupo.',
+    datosContacto:
+      'Dirección General Calle 57 No. 8-69 Bogotá · Tel. Bogotá: (601) 736 6060 · Línea nacional: 01 8000 910 270 · WhatsApp: +57 311 254 5028',
+    paginaWebOficial: 'https://www.sena.edu.co',
+    enlaceDirecto: 'https://zajuna.sena.edu.co',
+    tipoBeneficio: 'Gratuito público',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial SENA y plataforma Zajuna (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por gestionar (opción pública gratuita, sin convenio vigente)',
+    responsable: 'Gerente',
+  },
+  {
+    id: 'conv-eps-sura',
+    nombreConvenio: 'Opción de promoción y prevención en salud – EPS Sura',
+    entidad: 'EPS Sura (Bogotá D.C. / Nacional)',
+    tipoEntidad: 'EPS',
+    actividadesPlan: ['Pausas activas', 'Transversal'],
+    serviciosProgramas:
+      'Programas de Promoción y Prevención (PyP), educación en estilos de vida saludables, prevención de enfermedades crónicas y orientación en autocuidado físico y mental.',
+    beneficios:
+      'Cobertura de programas preventivos del Plan de Beneficios en Salud (PBS) sin costo adicional para los colaboradores afiliados a esta EPS.',
+    requisitosCondiciones:
+      'Sujeto exclusivamente a la afiliación individual vigente de cada trabajador en EPS Sura y solicitud a través de su IPS primaria o canales empresariales.',
+    condicionesMiPyme:
+      'Aplica independientemente del tamaño de la empresa para los trabajadores que pertenezcan a EPS Sura.',
+    datosContacto:
+      'Tel. Bogotá: (601) 489 7941 · Línea nacional: 01 8000 519 519 · Correo: Información no disponible en la fuente oficial consultada',
+    paginaWebOficial: 'https://www.epssura.com',
+    enlaceDirecto: 'https://www.epssura.com',
+    tipoBeneficio: 'Gratuito por afiliación / ley',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial EPS Sura (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por gestionar según afiliación individual de trabajadores',
+    responsable: 'Gerente',
+  },
+  {
+    id: 'conv-eps-sanitas',
+    nombreConvenio: 'Opción de promoción y prevención en salud – EPS Sanitas',
+    entidad: 'EPS Sanitas (Bogotá D.C. / Nacional)',
+    tipoEntidad: 'EPS',
+    actividadesPlan: ['Pausas activas', 'Transversal'],
+    serviciosProgramas:
+      'Programas de Promoción y Prevención (PyP), medicina preventiva, orientación en hábitos saludables y canal de atención para empleadores.',
+    beneficios:
+      'Atención preventiva incluida en el PBS para los trabajadores afiliados a EPS Sanitas y acompañamiento informativo para empleadores.',
+    requisitosCondiciones:
+      'Aplica a los trabajadores que tengan afiliación activa a EPS Sanitas; la gestión empresarial se canaliza mediante el portal de empleadores o asesor virtual.',
+    condicionesMiPyme:
+      'Disponible para empleadores MiPyme con trabajadores cotizantes en EPS Sanitas.',
+    datosContacto:
+      'Tel. Bogotá: (601) 375 9000 · Línea nacional: 01 8000 919 100 · Celular: #936 · Correo: Información no disponible en la fuente oficial consultada',
+    paginaWebOficial: 'https://www.epssanitas.com',
+    enlaceDirecto: 'https://asesorvirtualepssanitas.com',
+    tipoBeneficio: 'Gratuito por afiliación / ley',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial EPS Sanitas (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por gestionar según afiliación individual de trabajadores',
+    responsable: 'Gerente',
+  },
+  {
+    id: 'conv-nueva-eps',
+    nombreConvenio: 'Opción de promoción y prevención (RIAS) – Nueva EPS',
+    entidad: 'Nueva EPS (Bogotá D.C. / Nacional)',
+    tipoEntidad: 'EPS',
+    actividadesPlan: ['Pausas activas', 'Transversal'],
+    serviciosProgramas:
+      'Rutas Integrales de Atención en Salud (RIAS) para Promoción y Prevención, tamizajes preventivos y hábitos de vida saludable sin orden ni remisión.',
+    beneficios:
+      'Acceso gratuito dentro del PBS a programas de promoción de la salud y detección temprana para los colaboradores afiliados a Nueva EPS.',
+    requisitosCondiciones:
+      'El colaborador debe contar con afiliación activa a Nueva EPS y solicitar la atención preventiva directamente en su IPS primaria asignada.',
+    condicionesMiPyme:
+      'No exige tamaño mínimo de empresa; depende de la EPS elegida por cada colaborador.',
+    datosContacto:
+      'Régimen Contributivo Bogotá: (601) 307 7022 · Nacional: 01 8000 954 400 · Correo: Información no disponible en la fuente oficial consultada',
+    paginaWebOficial: 'https://www.nuevaeps.com.co',
+    enlaceDirecto: 'https://www.nuevaeps.com.co',
+    tipoBeneficio: 'Gratuito por afiliación / ley',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial Nueva EPS (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por gestionar según afiliación individual de trabajadores',
+    responsable: 'Gerente',
+  },
+  {
+    id: 'conv-positiva',
+    nombreConvenio: 'Opción de apoyo SG-SST y pausas activas – Positiva ARL',
+    entidad: 'Positiva Compañía de Seguros S.A. – ARL (Bogotá / Nacional)',
+    tipoEntidad: 'ARL',
+    actividadesPlan: ['Pausas activas', 'Transversal'],
+    serviciosProgramas:
+      'Modelo Positiva SUMA / Positiva Crea (Positiva Educa, Acompaña y Comunica), guías de pausas activas, ergonomía y prevención de riesgos laborales (SG-SST).',
+    beneficios:
+      'Asesoría técnica y recursos educativos gratuitos incluidos por ley para empresas afiliadas a esta ARL.',
+    requisitosCondiciones:
+      'Frikaz S.A.S. debe estar afiliada a Positiva ARL para acceder a su acompañamiento técnico y capacitación virtual.',
+    condicionesMiPyme:
+      'Aplica a micro y pequeñas empresas afiliadas al Sistema General de Riesgos Laborales en Positiva.',
+    datosContacto:
+      'Tel. Bogotá: (601) 330 7000 · Línea nacional: 01 8000 111 170 · Correo: servicioalcliente@positiva.gov.co',
+    paginaWebOficial: 'https://www.positiva.gov.co',
+    enlaceDirecto: 'https://www.positiva.gov.co',
+    tipoBeneficio: 'Gratuito por afiliación / ley',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial Positiva ARL (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por gestionar según ARL afiliada de Frikaz S.A.S.',
+    responsable: 'Gerente',
+  },
+  {
+    id: 'conv-arl-sura',
+    nombreConvenio: 'Opción de prevención psicosocial y pausas activas – ARL Sura',
+    entidad: 'ARL Sura (Bogotá D.C. / Nacional)',
+    tipoEntidad: 'ARL',
+    actividadesPlan: ['Pausas activas', 'Transversal'],
+    serviciosProgramas:
+      'Acompañamiento técnico al SG-SST, guías de pausas activas físicas y mentales, prevención de fatiga osteomuscular y promoción de estilos de vida saludables.',
+    beneficios:
+      'Materiales educativos, cápsulas y asesoría preventiva sin costo adicional para empresas afiliadas a ARL Sura.',
+    requisitosCondiciones:
+      'Sujeto a que Frikaz S.A.S. mantenga afiliación vigente de riesgos laborales con ARL Sura y radique solicitud mediante sus canales de empresa.',
+    condicionesMiPyme:
+      'Cuenta con recursos digitales y herramientas adaptadas para pequeñas empresas afiliadas.',
+    datosContacto:
+      'Tel. Bogotá: (601) 405 5911 · Líneas nacionales: 01 8000 51 1414 / 01 8000 94 1414 · Correo: Información no disponible en la fuente oficial consultada',
+    paginaWebOficial: 'https://www.arlsura.com',
+    enlaceDirecto: 'https://www.arlsura.com',
+    tipoBeneficio: 'Gratuito por afiliación / ley',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial ARL Sura (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por gestionar según ARL afiliada de Frikaz S.A.S.',
+    responsable: 'Gerente',
+  },
+  {
+    id: 'conv-colmena',
+    nombreConvenio: 'Opción de higiene postural y pausas activas – Colmena Seguros ARL',
+    entidad: 'Colmena Seguros – ARL (Bogotá D.C. / Nacional)',
+    tipoEntidad: 'ARL',
+    actividadesPlan: ['Pausas activas', 'Transversal'],
+    serviciosProgramas:
+      'Asesoría en SG-SST, guías prácticas de pausas activas, higiene postural, prevención del riesgo ergonómico y cultura de autocuidado.',
+    beneficios:
+      'Acceso gratuito a campañas, material educativo y acompañamiento en riesgos laborales para empresas afiliadas.',
+    requisitosCondiciones:
+      'Requiere afiliación laboral activa de la empresa en Colmena Seguros ARL.',
+    condicionesMiPyme:
+      'Atención a microempresas y MiPymes afiliadas mediante líneas empresariales y biblioteca digital.',
+    datosContacto:
+      'Tel. Bogotá: (601) 401 0447 / Conmutador (601) 514 1592 · Nacional: 01 8000 9 19667 · WhatsApp: +57 315 700 3033 · Celular: #833',
+    paginaWebOficial: 'https://www.colmenaseguros.com',
+    enlaceDirecto: 'https://www.colmenaseguros.com',
+    tipoBeneficio: 'Gratuito por afiliación / ley',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial Colmena Seguros (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por gestionar según ARL afiliada de Frikaz S.A.S.',
+    responsable: 'Gerente',
+  },
+  {
+    id: 'conv-idrd',
+    nombreConvenio: 'Opción de actividad física y recreación pública – IDRD Bogotá',
+    entidad: 'IDRD – Instituto Distrital de Recreación y Deporte (Bogotá D.C.)',
+    tipoEntidad: 'Otra institución',
+    actividadesPlan: ['Pausas activas', 'Juegos de mesa'],
+    serviciosProgramas:
+      'Programas públicos gratuitos Bogotá en Forma, Recreovía, Ciclovía y acceso/reservas en parques distritales y Centros Felicidad (CEFE).',
+    beneficios:
+      'Acceso ciudadano gratuito a sesiones dirigidas de actividad física, recreación y aprovechamiento del tiempo libre para trabajadores y familias en Bogotá.',
+    requisitosCondiciones:
+      'Participación abierta y gratuita en horarios públicos; para reservas de espacios específicos en CEFE o parques distritales se realiza trámite en la plataforma del IDRD.',
+    condicionesMiPyme:
+      'Ideal para empresas pequeñas en Bogotá sin presupuesto para eventos recreativos externos privados.',
+    datosContacto:
+      'Tel. Bogotá: (601) 660 5400 exts. 251 y 252 · Línea gratuita: 01 8000 113 199 · Correo: Información no disponible en la fuente oficial consultada',
+    paginaWebOficial: 'https://www.idrd.gov.co',
+    enlaceDirecto: 'https://www.idrd.gov.co',
+    tipoBeneficio: 'Gratuito público',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial IDRD Bogotá (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por consultar (oferta distrital abierta, sin convenio vigente)',
+    responsable: 'Gerente',
+  },
+  {
+    id: 'conv-sabermas',
+    nombreConvenio: 'Opción de educación financiera gratuita – Saber Más, Ser Más (Asobancaria)',
+    entidad: 'Saber Más, Ser Más – Programa de Educación Financiera de Asobancaria',
+    tipoEntidad: 'Otra institución',
+    actividadesPlan: ['Capacitaciones financieras'],
+    serviciosProgramas:
+      'Guías prácticas, artículos, calculadoras y cursos virtuales gratuitos sobre presupuesto del hogar, ahorro, manejo responsable del crédito y prevención de fraudes.',
+    beneficios:
+      'Material pedagógico gratuito y verificable que la Gerente puede emplear como apoyo en las cuatro capacitaciones financieras trimestrales de 2027.',
+    requisitosCondiciones:
+      'Acceso libre y gratuito en línea desde el portal web oficial sin exigir suscripción empresarial ni pago de honorarios.',
+    condicionesMiPyme:
+      'Recurso abierto especialmente útil para MiPymes porque reduce costos de facilitación manteniendo contenido técnico confiable.',
+    datosContacto:
+      'Canal web oficial (teléfono/correo directo: Información no disponible en la fuente oficial consultada)',
+    paginaWebOficial: 'https://www.sabermassermas.com',
+    enlaceDirecto: 'https://www.sabermassermas.com',
+    tipoBeneficio: 'Gratuito público',
+    estadoGestion: 'Por consultar',
+    fuenteVerificacion: 'Portal oficial Saber Más, Ser Más – Asobancaria (consultado 27/11/2026)',
+    fechaVerificacion: '27/11/2026',
+    esConvenioVigente: false,
+    vigencia: 'Por consultar (recurso abierto gratuito, sin convenio vigente)',
+    responsable: 'Gerente',
   },
 ];

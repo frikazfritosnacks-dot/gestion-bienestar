@@ -13,6 +13,7 @@ import {
   ProcessStep,
   ProgramaBienestar,
   RegistroSeguimiento,
+  ResponsablesPlanData,
   RespuestaEncuesta,
   TerminoItem,
   WordSyncInfo,
@@ -32,10 +33,14 @@ const STORAGE_KEY = 'frikaz_bienestar_social_v1';
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export function computeManualSyncHash(
-  state: Pick<BienestarState, 'manual' | 'normograma' | 'terminologia' | 'matrizMeta' | 'proceso'>
+  state: Pick<
+    BienestarState,
+    'manual' | 'responsablesPlan' | 'normograma' | 'terminologia' | 'matrizMeta' | 'proceso'
+  >
 ): string {
   const payload = JSON.stringify({
     manual: state.manual,
+    responsablesPlan: state.responsablesPlan,
     normograma: state.normograma,
     terminologia: state.terminologia,
     matrizMeta: state.matrizMeta,
@@ -72,13 +77,30 @@ interface BienestarContextValue {
   // Manual
   updatePortada: (portada: ManualData['portada'], opts?: MutationOptions) => void;
   updateManualField: (
-    field: 'introduccion' | 'objetivoGeneral' | 'justificacion' | 'alcance',
+    field:
+      | 'introduccion'
+      | 'objetivoGeneral'
+      | 'objetivoGeneralResponsable'
+      | 'objetivoGeneralFuncion'
+      | 'justificacion'
+      | 'alcance',
     value: string,
     opts?: MutationOptions
   ) => void;
-  addObjetivoEspecifico: (texto: string) => void;
-  updateObjetivoEspecifico: (id: string, texto: string, opts?: MutationOptions) => void;
+  addObjetivoEspecifico: (
+    texto: string,
+    responsable?: string,
+    funcionResponsable?: string
+  ) => void;
+  updateObjetivoEspecifico: (
+    id: string,
+    texto: string,
+    opts?: MutationOptions,
+    responsable?: string,
+    funcionResponsable?: string
+  ) => void;
   deleteObjetivoEspecifico: (id: string) => void;
+  updateResponsablesPlan: (data: ResponsablesPlanData, opts?: MutationOptions) => void;
   // Normograma
   addNorma: (norma: Omit<NormaItem, 'id'>) => void;
   updateNorma: (norma: NormaItem, opts?: MutationOptions) => void;
@@ -271,49 +293,161 @@ function loadInitialState(): BienestarState {
 
     const cachedVersion = parsed.manualContentVersion ?? 1;
     const needsFullManualV2Upgrade = cachedVersion < 2;
-    const needsMatrizConciseV3Upgrade = cachedVersion < CURRENT_MANUAL_CONTENT_VERSION;
+    const needsV4Upgrade = cachedVersion < CURRENT_MANUAL_CONTENT_VERSION;
+    const isLegacyRole = (val?: string) =>
+      !val || /talento humano|comit[eé]|contador|jefes de [aá]rea|responsables asignados/i.test(val);
 
     const initialStepMap = new Map(INITIAL_BIENESTAR_STATE.proceso.map((s) => [s.id, s]));
     const upgradedProceso = needsFullManualV2Upgrade
       ? INITIAL_BIENESTAR_STATE.proceso
-      : needsMatrizConciseV3Upgrade && Array.isArray(parsed.proceso)
-        ? parsed.proceso.map((step) => {
-            const initStep = initialStepMap.get(step.id);
-            if (!initStep) return step;
-            const desc = (step.descripcion || '').trim();
-            const isLegacyTemplate =
-              !desc ||
-              desc.startsWith('Consiste en ') ||
-              desc.includes('Pasos a seguir:') ||
-              desc.length < 110;
-            return isLegacyTemplate ? { ...step, descripcion: initStep.descripcion } : step;
-          })
+      : needsV4Upgrade && Array.isArray(parsed.proceso)
+        ? [
+            ...INITIAL_BIENESTAR_STATE.proceso,
+            ...parsed.proceso.filter((s) => !initialStepMap.has(s.id)),
+          ]
         : Array.isArray(parsed.proceso)
           ? parsed.proceso
           : INITIAL_BIENESTAR_STATE.proceso;
+
+    const initObjMap = new Map(
+      INITIAL_BIENESTAR_STATE.manual.objetivosEspecificos.map((o) => [o.id, o])
+    );
+    const mergedObjetivos = Array.isArray(parsed.manual.objetivosEspecificos)
+      ? parsed.manual.objetivosEspecificos.map((o) => {
+          const base = initObjMap.get(o.id);
+          return {
+            ...o,
+            responsable: isLegacyRole(o.responsable) ? base?.responsable || 'Gerente' : o.responsable,
+            funcionResponsable:
+              needsV4Upgrade && base?.funcionResponsable
+                ? base.funcionResponsable
+                : o.funcionResponsable || base?.funcionResponsable || 'Ejecutar, coordinar y hacer seguimiento al cumplimiento del objetivo en Frikaz S.A.S.',
+          };
+        })
+      : INITIAL_BIENESTAR_STATE.manual.objetivosEspecificos;
+
+    const upgradedManual: ManualData = needsFullManualV2Upgrade
+      ? {
+          ...INITIAL_BIENESTAR_STATE.manual,
+          portada: {
+            ...INITIAL_BIENESTAR_STATE.manual.portada,
+            ...(parsed.manual?.portada || {}),
+            empresa: normalizeEmpresaName(parsed.manual?.portada?.empresa),
+            areaResponsable: isLegacyRole(parsed.manual?.portada?.areaResponsable)
+              ? 'Gerencia'
+              : parsed.manual?.portada?.areaResponsable || 'Gerencia',
+          },
+        }
+      : {
+          ...INITIAL_BIENESTAR_STATE.manual,
+          ...parsed.manual,
+          introduccion: needsV4Upgrade
+            ? INITIAL_BIENESTAR_STATE.manual.introduccion
+            : parsed.manual.introduccion || INITIAL_BIENESTAR_STATE.manual.introduccion,
+          justificacion: needsV4Upgrade
+            ? INITIAL_BIENESTAR_STATE.manual.justificacion
+            : parsed.manual.justificacion || INITIAL_BIENESTAR_STATE.manual.justificacion,
+          alcance: needsV4Upgrade
+            ? INITIAL_BIENESTAR_STATE.manual.alcance
+            : parsed.manual.alcance || INITIAL_BIENESTAR_STATE.manual.alcance,
+          objetivoGeneralResponsable: isLegacyRole(parsed.manual.objetivoGeneralResponsable)
+            ? INITIAL_BIENESTAR_STATE.manual.objetivoGeneralResponsable
+            : parsed.manual.objetivoGeneralResponsable,
+          objetivoGeneralFuncion: needsV4Upgrade
+            ? INITIAL_BIENESTAR_STATE.manual.objetivoGeneralFuncion
+            : parsed.manual.objetivoGeneralFuncion ||
+              INITIAL_BIENESTAR_STATE.manual.objetivoGeneralFuncion,
+          objetivosEspecificos: needsV4Upgrade
+            ? INITIAL_BIENESTAR_STATE.manual.objetivosEspecificos.map((initObj) => {
+                const userObj = mergedObjetivos.find((u) => u.id === initObj.id);
+                return userObj
+                  ? {
+                      ...initObj,
+                      texto: userObj.texto || initObj.texto,
+                    }
+                  : initObj;
+              }).concat(mergedObjetivos.filter((u) => !initObjMap.has(u.id)))
+            : mergedObjetivos,
+          portada: {
+            ...INITIAL_BIENESTAR_STATE.manual.portada,
+            ...(parsed.manual?.portada || {}),
+            empresa: normalizeEmpresaName(parsed.manual?.portada?.empresa),
+            areaResponsable: isLegacyRole(parsed.manual?.portada?.areaResponsable)
+              ? 'Gerencia'
+              : parsed.manual?.portada?.areaResponsable || 'Gerencia',
+            fechaActualizacion: needsV4Upgrade
+              ? INITIAL_BIENESTAR_STATE.manual.portada.fechaActualizacion
+              : parsed.manual?.portada?.fechaActualizacion ||
+                INITIAL_BIENESTAR_STATE.manual.portada.fechaActualizacion,
+          },
+        };
+
+    const initActMap = new Map(INITIAL_BIENESTAR_STATE.planBienestar.map((a) => [a.id, a]));
+    const upgradedPlanBienestar = finalPlan.map((act) => {
+      const base = initActMap.get(act.id);
+      const nextResp = isLegacyRole(act.responsable) ? 'Gerente' : act.responsable;
+      if (needsV4Upgrade && base) {
+        const shouldRefreshRules = act.id === 'act-6' || act.id === 'act-7' || act.id === 'act-9';
+        return {
+          ...act,
+          responsable: nextResp,
+          descripcion: shouldRefreshRules ? base.descripcion : act.descripcion,
+          descripcionDetallada: shouldRefreshRules
+            ? base.descripcionDetallada
+            : act.descripcionDetallada,
+          metodologia: shouldRefreshRules ? base.metodologia : act.metodologia,
+        };
+      }
+      return {
+        ...act,
+        responsable: nextResp,
+      };
+    });
+
+    const upgradedPlanGeneral =
+      hasPlan2027 && parsed.planGeneral
+        ? needsV4Upgrade || isLegacyRole(parsed.planGeneral.responsables)
+          ? {
+              ...parsed.planGeneral,
+              responsables: INITIAL_BIENESTAR_STATE.planGeneral.responsables,
+              objetivoGeneral: INITIAL_BIENESTAR_STATE.planGeneral.objetivoGeneral,
+              alcance: INITIAL_BIENESTAR_STATE.planGeneral.alcance,
+            }
+          : parsed.planGeneral
+        : INITIAL_BIENESTAR_STATE.planGeneral;
+
+    const legacyMockConvenioIds = new Set(['conv-1', 'conv-2', 'conv-3', 'conv-4']);
+    const upgradedConvenios: ConvenioItem[] = (() => {
+      if (!hasPlan2027 || !Array.isArray(parsed.convenios) || parsed.convenios.length === 0) {
+        return INITIAL_BIENESTAR_STATE.convenios;
+      }
+      if (needsV4Upgrade) {
+        const initConvMap = new Map(INITIAL_BIENESTAR_STATE.convenios.map((c) => [c.id, c]));
+        const customConvenios = parsed.convenios.filter(
+          (c) => !legacyMockConvenioIds.has(c.id) && !initConvMap.has(c.id)
+        );
+        const updatedInitial = INITIAL_BIENESTAR_STATE.convenios.map((base) => {
+          const existing = parsed.convenios?.find((c) => c.id === base.id);
+          return existing?.estadoGestion
+            ? { ...base, estadoGestion: existing.estadoGestion }
+            : base;
+        });
+        return [...updatedInitial, ...customConvenios];
+      }
+      return parsed.convenios;
+    })();
 
     const merged: BienestarState = {
       ...INITIAL_BIENESTAR_STATE,
       ...parsed,
       manualContentVersion: CURRENT_MANUAL_CONTENT_VERSION,
-      manual: needsFullManualV2Upgrade
-        ? {
-            ...INITIAL_BIENESTAR_STATE.manual,
-            portada: {
-              ...INITIAL_BIENESTAR_STATE.manual.portada,
-              ...(parsed.manual?.portada || {}),
-              empresa: normalizeEmpresaName(parsed.manual?.portada?.empresa),
-            },
-          }
-        : {
-            ...INITIAL_BIENESTAR_STATE.manual,
-            ...parsed.manual,
-            portada: {
-              ...INITIAL_BIENESTAR_STATE.manual.portada,
-              ...(parsed.manual?.portada || {}),
-              empresa: normalizeEmpresaName(parsed.manual?.portada?.empresa),
-            },
-          },
+      manual: upgradedManual,
+      responsablesPlan:
+        parsed.responsablesPlan &&
+        Array.isArray(parsed.responsablesPlan.responsabilidades) &&
+        parsed.responsablesPlan.responsabilidades.length > 0
+          ? parsed.responsablesPlan
+          : INITIAL_BIENESTAR_STATE.responsablesPlan,
       normograma: needsFullManualV2Upgrade
         ? INITIAL_BIENESTAR_STATE.normograma
         : Array.isArray(parsed.normograma)
@@ -329,11 +463,12 @@ function loadInitialState(): BienestarState {
         ...INITIAL_BIENESTAR_STATE.matrizMeta,
         ...(parsed.matrizMeta || {}),
         empresa: normalizeEmpresaName(parsed.matrizMeta?.empresa),
+        responsable: isLegacyRole(parsed.matrizMeta?.responsable)
+          ? 'Gerente'
+          : parsed.matrizMeta?.responsable || 'Gerente',
       },
-      planGeneral: hasPlan2027 && parsed.planGeneral
-        ? parsed.planGeneral
-        : INITIAL_BIENESTAR_STATE.planGeneral,
-      planBienestar: finalPlan,
+      planGeneral: upgradedPlanGeneral,
+      planBienestar: upgradedPlanBienestar,
       presupuestoGeneral2027: migratedBudget,
       seguimiento: cleanSeguimiento,
       respuestasEncuestas: Array.isArray(parsed.respuestasEncuestas)
@@ -374,12 +509,9 @@ function loadInitialState(): BienestarState {
               fechaHoraRegistro: l.fechaHoraRegistro || `${l.fecha || '2027-01-01'}T12:00:00.000Z`,
             }))
         : [],
-      convenios:
-        hasPlan2027 && Array.isArray(parsed.convenios) && parsed.convenios.length > 0
-          ? parsed.convenios
-          : INITIAL_BIENESTAR_STATE.convenios,
+      convenios: upgradedConvenios,
     };
-    if (!merged.wordSync || needsMatrizConciseV3Upgrade) {
+    if (!merged.wordSync || needsV4Upgrade) {
       merged.wordSync = {
         lastSyncedAt: merged.lastUpdated || new Date().toISOString(),
         lastSyncedHash: computeManualSyncHash(merged),
@@ -588,7 +720,13 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateManualField = (
-    field: 'introduccion' | 'objetivoGeneral' | 'justificacion' | 'alcance',
+    field:
+      | 'introduccion'
+      | 'objetivoGeneral'
+      | 'objetivoGeneralResponsable'
+      | 'objetivoGeneralFuncion'
+      | 'justificacion'
+      | 'alcance',
     value: string,
     opts?: MutationOptions
   ) => {
@@ -600,26 +738,46 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     if (!opts?.silent) notify('Sección del manual guardada.');
   };
 
-  const addObjetivoEspecifico = (texto: string) => {
+  const addObjetivoEspecifico = (
+    texto: string,
+    responsable = 'Gerente',
+    funcionResponsable = 'Coordinar, ejecutar y verificar el cumplimiento del objetivo en Frikaz S.A.S.'
+  ) => {
     const id = `obj-${Date.now()}`;
     setState((prev) =>
       touch(prev, {
         manual: {
           ...prev.manual,
-          objetivosEspecificos: [...prev.manual.objetivosEspecificos, { id, texto }],
+          objetivosEspecificos: [
+            ...prev.manual.objetivosEspecificos,
+            { id, texto, responsable, funcionResponsable },
+          ],
         },
       })
     );
     notify('Objetivo específico agregado.');
   };
 
-  const updateObjetivoEspecifico = (id: string, texto: string, opts?: MutationOptions) => {
+  const updateObjetivoEspecifico = (
+    id: string,
+    texto: string,
+    opts?: MutationOptions,
+    responsable?: string,
+    funcionResponsable?: string
+  ) => {
     setState((prev) =>
       touch(prev, {
         manual: {
           ...prev.manual,
           objetivosEspecificos: prev.manual.objetivosEspecificos.map((o) =>
-            o.id === id ? { ...o, texto } : o
+            o.id === id
+              ? {
+                  ...o,
+                  texto,
+                  responsable: responsable ?? o.responsable ?? 'Gerente',
+                  funcionResponsable: funcionResponsable ?? o.funcionResponsable,
+                }
+              : o
           ),
         },
       })
@@ -637,6 +795,15 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
       })
     );
     notify('Objetivo específico eliminado.', 'info');
+  };
+
+  const updateResponsablesPlan = (data: ResponsablesPlanData, opts?: MutationOptions) => {
+    setState((prev) =>
+      touch(prev, {
+        responsablesPlan: data,
+      })
+    );
+    if (!opts?.silent) notify('Responsabilidades del Plan de Bienestar actualizadas.');
   };
 
   const addNorma = (norma: Omit<NormaItem, 'id'>) => {
@@ -855,7 +1022,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     descripcion: string,
     valorAnterior: number,
     valorNuevo: number,
-    usuario = 'Talento Humano'
+    usuario = 'Gerente'
   ): PresupuestoHistorialItem => ({
     id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
     fechaHora: new Date().toISOString(),
@@ -900,7 +1067,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
 
   const addPresupuestoCostoItem = (
     item: Omit<PresupuestoCostoItem, 'id'>,
-    usuario = 'Talento Humano'
+    usuario = 'Gerente'
   ): { ok: boolean; error?: string } => {
     if (!item.recursoMaterial.trim() || item.cantidad <= 0 || item.valorUnitario < 0) {
       const error = 'Ingresa descripción del recurso, cantidad mayor a cero y valor unitario válido.';
@@ -957,7 +1124,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
 
   const updatePresupuestoCostoItem = (
     item: PresupuestoCostoItem,
-    usuario = 'Talento Humano'
+    usuario = 'Gerente'
   ): { ok: boolean; error?: string } => {
     if (!item.recursoMaterial.trim() || item.cantidad < 0 || item.valorUnitario < 0) {
       const error = 'Los valores del recurso deben ser válidos y no negativos.';
@@ -1051,7 +1218,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
     return { ok: true };
   };
 
-  const deletePresupuestoCostoItem = (id: string, usuario = 'Talento Humano') => {
+  const deletePresupuestoCostoItem = (id: string, usuario = 'Gerente') => {
     setState((prev) => {
       const isApproved = prev.presupuestoGeneral2027.estadoAprobacion === 'Aprobado por Gerencia';
       const target = prev.presupuestoGeneral2027.items.find((it) => it.id === id);
@@ -1233,7 +1400,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
                 ...resp,
                 calificacionGeneral,
                 ultimaCorreccionAt: new Date().toISOString(),
-                corregidoPor: autorizador.trim() || 'Talento Humano Autorizado',
+                corregidoPor: autorizador.trim() || 'Gerente autorizada',
               }
             : r
         ),
@@ -1326,7 +1493,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
             ? {
                 ...lista,
                 ultimaCorreccionAt: new Date().toISOString(),
-                corregidoPor: autorizador.trim() || 'Talento Humano Autorizado',
+                corregidoPor: autorizador.trim() || 'Gerente autorizada',
               }
             : l
         ),
@@ -1479,6 +1646,7 @@ export function BienestarProvider({ children }: { children: React.ReactNode }) {
         addObjetivoEspecifico,
         updateObjetivoEspecifico,
         deleteObjetivoEspecifico,
+        updateResponsablesPlan,
         addNorma,
         updateNorma,
         deleteNorma,

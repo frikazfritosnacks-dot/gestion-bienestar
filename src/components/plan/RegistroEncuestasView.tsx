@@ -217,7 +217,7 @@ export function RegistroEncuestasView() {
   const confirmAuthorization = (e: React.FormEvent) => {
     e.preventDefault();
     if (pinInput.trim() !== AUTHORIZED_PIN) {
-      notify('Clave de autorización incorrecta. Solo Talento Humano autorizado puede corregir registros.', 'warning');
+      notify('Clave de autorización incorrecta. Solo la Gerente autorizada puede corregir registros.', 'warning');
       return;
     }
     if (!autorizadorNombre.trim()) {
@@ -848,8 +848,8 @@ export function RegistroEncuestasView() {
               </h3>
             </div>
             <p className="text-xs text-slate-600">
-              Para conservar la integridad del historial, únicamente el responsable autorizado de
-              Talento Humano puede corregir registros (clave institucional: <strong>2027</strong>).
+              Para conservar la integridad del historial, únicamente la Gerente autorizada puede
+              corregir registros (clave institucional: <strong>2027</strong>).
             </p>
             <div>
               <label className="mb-1 block text-xs font-bold text-[#0F294A]">
@@ -860,7 +860,7 @@ export function RegistroEncuestasView() {
                 required
                 value={autorizadorNombre}
                 onChange={(e) => setAutorizadorNombre(e.target.value)}
-                placeholder="Ej. Responsable de Talento Humano"
+                placeholder="Ej. Gerente de Frikaz S.A.S."
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
               />
             </div>

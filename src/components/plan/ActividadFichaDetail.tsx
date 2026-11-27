@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Activity,
   ArrowLeft,
   Calendar,
   Check,
@@ -29,6 +30,7 @@ interface ActividadFichaDetailProps {
   onUpdate: (updated: ProgramaBienestar) => void;
   onOpenEncuesta: (actividadId: string) => void;
   onOpenAsistencia: (actividadId: string) => void;
+  onOpenPausasActivas?: () => void;
 }
 
 const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -54,6 +56,7 @@ export function ActividadFichaDetail({
   onUpdate,
   onOpenEncuesta,
   onOpenAsistencia,
+  onOpenPausasActivas,
 }: ActividadFichaDetailProps) {
   const { state, notify } = useBienestar();
   const [editing, setEditing] = useState(false);
@@ -92,6 +95,17 @@ export function ActividadFichaDetail({
         </button>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          {actividad.id === 'act-1' && onOpenPausasActivas && (
+            <button
+              type="button"
+              data-piggy-submodule="true"
+              onClick={onOpenPausasActivas}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0F294A] px-3.5 py-2 text-xs font-bold text-[#FACC15] hover:bg-[#163A66] cursor-pointer"
+            >
+              <Activity className="h-4 w-4" />
+              Abrir Pausas Activas Interactivas →
+            </button>
+          )}
           <button
             type="button"
             data-piggy-submodule="true"

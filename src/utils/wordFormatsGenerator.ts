@@ -634,7 +634,7 @@ function buildPortadaBody(state: BienestarState): (Paragraph | Table)[] {
       ],
     }),
     pText('', { before: 240, after: 100 }),
-    buildSignatureBlock('Elaborado por (Gestión del Talento Humano)', 'Aprobado por (Gerencia General Frikaz S.A.S.)'),
+    buildSignatureBlock('Elaborado por (Responsable del Plan)', 'Aprobado por (Gerente Frikaz S.A.S.)'),
   ];
 }
 
@@ -930,7 +930,7 @@ function buildListaAsistenciaWordBody(): (Paragraph | Table)[] {
     pText('Total de asistentes: ________     |     Observaciones: ____________________________________________________', {
       before: 100,
     }),
-    buildSignatureBlock('Responsable de la jornada', 'Vo. Bo. Gestión del Talento Humano'),
+    buildSignatureBlock('Responsable de la jornada', 'Vo. Bo. Gerente'),
   ];
 }
 
@@ -957,7 +957,7 @@ function buildActaEjecucionBody(): (Paragraph | Table)[] {
       ],
     }),
     pText('', { before: 120 }),
-    buildSignatureBlock('Responsable de ejecución', 'Representante / Comité de Bienestar'),
+    buildSignatureBlock('Responsable de ejecución', 'Gerente Frikaz S.A.S.'),
   ];
 }
 
@@ -998,7 +998,7 @@ function buildRegistroEvidenciasBody(): (Paragraph | Table)[] {
       ],
     }),
     pText('', { before: 120 }),
-    buildSignatureBlock('Responsable del archivo documental', 'Verificado por Gestión del Talento Humano'),
+    buildSignatureBlock('Responsable del archivo documental', 'Verificado por Gerente'),
   ];
 }
 

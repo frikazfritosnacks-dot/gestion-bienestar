@@ -28,7 +28,7 @@ const emptyStepForm = {
   symbol: 'rectangle' as FlowchartSymbol,
   actividad: '',
   descripcion: '',
-  responsable: 'Talento Humano',
+  responsable: 'Gerente',
   registroDocumento: '',
   isDecision: false,
   isAdjustment: false,
@@ -445,7 +445,7 @@ export function MatrizDetalladaSection({ onOpenFlowchart }: MatrizDetalladaSecti
                 type="text"
                 value={newStep.responsable}
                 onChange={(e) => setNewStep({ ...newStep, responsable: e.target.value })}
-                placeholder="Ej. Talento Humano / Gerencia"
+                placeholder="Ej. Gerente"
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-[#0F294A]"
               />
             </div>

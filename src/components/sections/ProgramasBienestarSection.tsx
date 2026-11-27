@@ -33,12 +33,14 @@ import { CronogramaGanttView } from '../plan/CronogramaGanttView';
 import { EncuestasManager } from '../plan/EncuestasManager';
 import { FormatosDescargasView } from '../plan/FormatosDescargasView';
 import { Presupuesto2027View } from '../plan/Presupuesto2027View';
+import { PausasActivasInteractive } from '../plan/PausasActivasInteractive';
 import { RegistroEncuestasView } from '../plan/RegistroEncuestasView';
 import { SeguimientoIndicadoresView } from '../plan/SeguimientoIndicadoresView';
 
 export type PlanSubTab =
   | 'general'
   | 'actividades'
+  | 'pausas'
   | 'presupuesto'
   | 'cronograma'
   | 'seguimiento'
@@ -62,13 +64,14 @@ const DIMENSION_ICONS: Record<DimensionBienestar, typeof Activity> = {
 const SUB_TABS: Array<{ id: PlanSubTab; label: string; icon: typeof Info }> = [
   { id: 'general', label: 'Información General', icon: Info },
   { id: 'actividades', label: 'Dimensiones y Fichas (9)', icon: Layers },
+  { id: 'pausas', label: 'Pausas Activas Interactivas', icon: Activity },
   { id: 'presupuesto', label: 'Presupuesto General 2027', icon: DollarSign },
   { id: 'cronograma', label: 'Cronograma y Gantt 2027', icon: CalendarRange },
   { id: 'seguimiento', label: 'Seguimiento e Indicadores', icon: TrendingUp },
   { id: 'encuestas', label: 'Diligenciar Encuesta', icon: ClipboardCheck },
   { id: 'registroEncuestas', label: 'Registro de Encuestas', icon: Database },
   { id: 'asistencia', label: 'Registro de Asistencia', icon: ClipboardList },
-  { id: 'convenios', label: 'Convenios', icon: Handshake },
+  { id: 'convenios', label: 'Convenios y Alianzas', icon: Handshake },
   { id: 'formatos', label: 'Formatos en Blanco', icon: FileSpreadsheet },
 ];
 
@@ -355,6 +358,10 @@ export function ProgramasBienestarSection({
               onUpdate={updatePrograma}
               onOpenEncuesta={handleOpenEncuestaFromFicha}
               onOpenAsistencia={handleOpenAsistenciaFromFicha}
+              onOpenPausasActivas={() => {
+                setSelectedActividadId(null);
+                setActiveTab('pausas');
+              }}
             />
           ) : (
             <div className="space-y-6">
@@ -493,6 +500,9 @@ export function ProgramasBienestarSection({
           )}
         </>
       )}
+
+      {/* SUBPÁGINA B2: PAUSAS ACTIVAS INTERACTIVAS CON LA MASCOTA FRIKAZ */}
+      {activeTab === 'pausas' && <PausasActivasInteractive />}
 
       {/* SUBPÁGINA C: PRESUPUESTO GENERAL ANUAL 2027 Y DESGLOSE POR ÍTEMS */}
       {activeTab === 'presupuesto' && <Presupuesto2027View />}

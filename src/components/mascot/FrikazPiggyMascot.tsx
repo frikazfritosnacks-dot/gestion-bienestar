@@ -13,7 +13,7 @@ interface FrikazPiggyMascotProps {
   className?: string;
 }
 
-interface ArticulatedPiggyLayers {
+export interface ArticulatedPiggyLayers {
   head: string;
   torso: string;
   leftArm: string;
@@ -122,7 +122,7 @@ function featherEdgeHalos(data: Uint8ClampedArray, visited: Uint8Array, w: numbe
  * Procesa exactamente la ilustración oficial de Frikaz S.A.S. (image_a7cf5f49.png) en 6 capas articuladas
  * para la caminata y posición erguida de pie.
  */
-function loadArticulatedPiggyLayers(): Promise<ArticulatedPiggyLayers | null> {
+export function loadArticulatedPiggyLayers(): Promise<ArticulatedPiggyLayers | null> {
   if (cachedLayers) return Promise.resolve(cachedLayers);
   if (layersPromise) return layersPromise;
 

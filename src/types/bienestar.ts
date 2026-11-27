@@ -1,6 +1,7 @@
 export type SectionId =
   | 'inicio'
   | 'manual'
+  | 'responsables'
   | 'matriz'
   | 'flujograma'
   | 'programas';
@@ -49,15 +50,32 @@ export interface WordSyncInfo {
 export interface ObjetivoEspecifico {
   id: string;
   texto: string;
+  responsable?: string;
+  funcionResponsable?: string;
 }
 
 export interface ManualData {
   portada: ManualPortada;
   introduccion: string;
   objetivoGeneral: string;
+  objetivoGeneralResponsable?: string;
+  objetivoGeneralFuncion?: string;
   objetivosEspecificos: ObjetivoEspecifico[];
   justificacion: string;
   alcance: string;
+}
+
+export interface ResponsabilidadItem {
+  id: string;
+  numero: number;
+  texto: string;
+  apartadoRelacionado?: string;
+}
+
+export interface ResponsablesPlanData {
+  cargoPrincipal: string;
+  alcanceResponsabilidad: string;
+  responsabilidades: ResponsabilidadItem[];
 }
 
 export interface NormaItem {
@@ -289,12 +307,44 @@ export interface ListaAsistenciaActividad {
   corregidoPor?: string;
 }
 
+export type ConvenioTipoEntidad =
+  | 'Caja de Compensación Familiar'
+  | 'SENA'
+  | 'EPS'
+  | 'ARL'
+  | 'Otra institución';
+
+export type ConvenioEstadoGestion =
+  | 'Por consultar'
+  | 'Contactada'
+  | 'En negociación'
+  | 'Convenio establecido'
+  | 'No aplica';
+
+export type ConvenioTipoBeneficio =
+  | 'Gratuito por afiliación / ley'
+  | 'Gratuito público'
+  | 'Subsidiado / Tarifa afiliado'
+  | 'Con costo empresarial / a cotizar';
+
 export interface ConvenioItem {
   id: string;
   nombreConvenio: string;
   entidad: string;
+  tipoEntidad?: ConvenioTipoEntidad | string;
+  actividadesPlan?: string[];
+  serviciosProgramas?: string;
   datosContacto: string;
   beneficios: string;
+  requisitosCondiciones?: string;
+  condicionesMiPyme?: string;
+  paginaWebOficial?: string;
+  enlaceDirecto?: string;
+  tipoBeneficio?: ConvenioTipoBeneficio | string;
+  estadoGestion?: ConvenioEstadoGestion;
+  fuenteVerificacion?: string;
+  fechaVerificacion?: string;
+  esConvenioVigente?: boolean;
   vigencia: string;
   responsable: string;
 }
@@ -327,6 +377,7 @@ export interface RegistroSeguimiento {
 export interface BienestarState {
   manualContentVersion?: number;
   manual: ManualData;
+  responsablesPlan: ResponsablesPlanData;
   normograma: NormaItem[];
   terminologia: TerminoItem[];
   matrizMeta: MatrizMetadata;

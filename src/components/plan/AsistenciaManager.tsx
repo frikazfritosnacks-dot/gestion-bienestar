@@ -461,7 +461,7 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
     e.preventDefault();
     if (pinInput.trim() !== AUTHORIZED_PIN) {
       notify(
-        'Clave incorrecta. Solo el personal autorizado de Talento Humano puede acceder o corregir registros.',
+        'Clave incorrecta. Solo la Gerente autorizada puede acceder o corregir registros.',
         'warning'
       );
       return;
@@ -1311,8 +1311,7 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
             </div>
             <p className="text-xs text-slate-600">
               Los documentos de identidad, firmas y correcciones históricas están protegidos. Solo
-              personal autorizado de Talento Humano puede acceder (clave institucional:{' '}
-              <strong>2027</strong>).
+              la Gerente autorizada puede acceder (clave institucional: <strong>2027</strong>).
             </p>
             <div>
               <label className="mb-1 block text-xs font-bold text-[#0F294A]">
@@ -1323,7 +1322,7 @@ export function AsistenciaManager({ initialActividadId }: AsistenciaManagerProps
                 required
                 value={autorizadorNombre}
                 onChange={(e) => setAutorizadorNombre(e.target.value)}
-                placeholder="Ej. Responsable de Talento Humano"
+                placeholder="Ej. Gerente de Frikaz S.A.S."
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
               />
             </div>

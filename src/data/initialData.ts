@@ -8,48 +8,127 @@ import {
   RESPUESTAS_ENCUESTAS_INICIALES,
 } from './planBienestarData';
 
-export const CURRENT_MANUAL_CONTENT_VERSION = 3;
+export const CURRENT_MANUAL_CONTENT_VERSION = 4;
 
 export const INITIAL_BIENESTAR_STATE: BienestarState = {
   manualContentVersion: CURRENT_MANUAL_CONTENT_VERSION,
-  lastUpdated: '2026-11-26T10:00:00.000Z',
+  lastUpdated: '2026-11-27T10:00:00.000Z',
   manual: {
     portada: {
       empresa: 'Frikaz S.A.S.',
       nombreDocumento: 'Manual del Procedimiento de Bienestar Social Laboral',
       codigoDocumental: 'TH-MBS-01',
       version: '01',
-      fechaActualizacion: '13/11/2026',
-      areaResponsable: 'Gestión del Talento Humano',
+      fechaActualizacion: '27/11/2026',
+      areaResponsable: 'Gerencia',
       elaboradoPor: '',
       revisadoPor: '',
       aprobadoPor: '',
     },
     introduccion:
-      'El presente Manual de Procedimientos de Bienestar Social Laboral de Frikaz S.A.S. tiene como propósito establecer los lineamientos y procedimientos necesarios para planificar, desarrollar y evaluar actividades orientadas al bienestar integral de los trabajadores, teniendo en cuenta sus necesidades personales, familiares, sociales y laborales.\n\nEl Bienestar Social Laboral se define como el conjunto de programas, estrategias y actividades que buscan mejorar la calidad de vida de los trabajadores, promoviendo su desarrollo personal, social y profesional, así como condiciones que favorezcan su satisfacción, motivación e integración dentro de la organización. Su finalidad es fortalecer las relaciones interpersonales, el sentido de pertenencia, el clima laboral y el equilibrio entre la vida personal y laboral.\n\nDe acuerdo con Max-Neef, Elizalde y Hopenhayn (1986), las necesidades humanas fundamentales comprenden aspectos como el afecto, la participación, la protección, la identidad y el entendimiento, lo que permite reconocer la importancia de atender al trabajador desde una perspectiva integral. Asimismo, la Organización Mundial de la Salud (2010) señala que los entornos laborales saludables deben promover y proteger la salud, la seguridad y el bienestar de los trabajadores, considerando tanto las condiciones físicas como los aspectos psicosociales del ambiente laboral.\n\nEn este sentido, el Manual de Bienestar Social Laboral de Frikaz S.A.S. se convierte en una herramienta de apoyo para la Gestión del Talento Humano, ya que permite organizar y estandarizar las actividades dirigidas a los colaboradores, estableciendo objetivos, responsables y mecanismos de seguimiento. Además, facilita la identificación de las necesidades del personal y la implementación de acciones que respondan a ellas.\n\nDe esta manera, se busca fortalecer una cultura organizacional basada en el respeto, la participación, la equidad y el reconocimiento, comprendiendo que el bienestar de los trabajadores no solo favorece su calidad de vida, sino que también contribuye al compromiso, la productividad y el crecimiento de la organización.',
+      'El bienestar social laboral constituye un eje estratégico para el desarrollo humano dentro de las organizaciones contemporáneas, al integrar condiciones físicas, emocionales, familiares, sociales y económicas que influyen en la calidad de vida en el trabajo, la motivación cotidiana y la sostenibilidad empresarial. En el caso de Frikaz S.A.S., una organización conformada por 10 colaboradores distribuidos entre las áreas administrativa, operativa y logística, cuidar de manera planificada las condiciones en que se desarrolla la labor diaria resulta fundamental para promover relaciones respetuosas, prevenir el desgaste y consolidar un equipo cohesionado.\n\nDesde una perspectiva institucional y científica, la Organización Mundial de la Salud [OMS] (2010, 2022) ha enfatizado en sus directrices sobre entornos laborales saludables y salud mental en el trabajo que el bienestar laboral depende tanto del ambiente físico seguro como de la gestión participativa de los factores psicosociales, el apoyo organizacional y el fortalecimiento de habilidades personales y financieras. De forma complementaria, el enfoque de desarrollo a escala humana propuesto por Max-Neef, Elizalde y Hopenhayn (1986) sostiene que las personas requieren satisfactores integrales vinculados con la protección, el afecto, el entendimiento, la participación y la identidad, lo que orienta los programas laborales hacia el reconocimiento integral del trabajador como ser humano y miembro de una familia.\n\nLa investigación empírica reciente en el contexto iberoamericano y colombiano respalda esta relación entre gestión humana planificada y resultados positivos compartidos. García-Rubiano et al. (2024) evidenciaron que el clima organizacional actúa como un mediador decisivo entre la disposición de los equipos y el bienestar eudaimónico de los trabajadores, mientras que Mendoza-Vargas, Burbano-Pantoja y Mendoza-Vargas (2022) constataron en una empresa colombiana una asociación directa entre las dimensiones del clima laboral y el desempeño cotidiano. En esa misma línea, Chunga Díaz y Escuza Pasco (2023), a partir de una revisión sistemática, y Rosero-Lasso, Chaucanes-Figueroa y Chavez-Martinez (2025), en un estudio empírico realizado en Colombia, destacaron que el fortalecimiento de la satisfacción laboral y del clima interno favorece el sentido de pertenencia, la comunicación entre áreas y la estabilidad de los equipos de trabajo.\n\nEn el marco normativo colombiano vigente, disposiciones como la Ley 2466 de 2025 (Reforma Laboral) refuerzan la relevancia de garantizar condiciones de trabajo dignas, el respeto por los tiempos de descanso, la equidad y el equilibrio entre la vida laboral, personal y familiar (Congreso de la República de Colombia, 2025). Atender este propósito en una microempresa en crecimiento demanda contar con un instrumento claro, realista y ajustado a la escala de Frikaz S.A.S., en el cual la Gerente lidere directamente la planeación anual a partir de un diagnóstico participativo, optimice los recursos disponibles y evalúe periódicamente el impacto percibido por las personas.\n\nEn consecuencia, el presente Manual del Procedimiento de Bienestar Social Laboral establece los lineamientos, el flujo operativo y los instrumentos de control para diseñar, ejecutar y evaluar actividades alcanzables —como pausas activas, espacios lúdicos, formación financiera, apoyos familiares, desayunos comunitarios, conmemoraciones, flexibilidad horaria y reconocimientos— que generen beneficios mutuos: mejorar el bienestar integral y la calidad de vida de los trabajadores y, al mismo tiempo, fortalecer el compromiso, la productividad responsable y la cultura organizacional de Frikaz S.A.S.',
     objetivoGeneral:
       'Guiar a la gerencia a construir diferentes programas de bienestar social laboral para cada una de las dimensiones personales de los trabajadores, teniendo en cuenta sus necesidades para la estructuración de los programas, así promoviendo la participación de cada uno de los trabajadores de las diferentes áreas de Frikaz S.A.S.',
+    objetivoGeneralResponsable: 'Gerente',
+    objetivoGeneralFuncion:
+      'Liderar, aprobar y supervisar de manera directa el diseño, la planeación anual, la coordinación operativa y la evaluación integral de todos los programas de bienestar social laboral para las áreas administrativa, operativa y logística de Frikaz S.A.S.',
     objetivosEspecificos: [
       {
         id: 'obj-1',
         texto:
           'Diseñar un instrumento diagnóstico para conocer las necesidades de bienestar de los trabajadores en Frikaz S.A.S.',
+        responsable: 'Gerente',
+        funcionResponsable:
+          'Elaborar, aprobar y aplicar una vez al año el instrumento diagnóstico al inicio del ciclo anual para identificar las necesidades, intereses y preferencias de los 10 colaboradores.',
       },
       {
         id: 'obj-2',
         texto:
           'Realizar los programas de bienestar social laboral de acuerdo con las necesidades de los trabajadores, abarcando la dimensión social, mental, física, familiar, económica y emocional.',
+        responsable: 'Gerente',
+        funcionResponsable:
+          'Estructurar el plan anual, programar el cronograma, definir el presupuesto, gestionar posibles apoyos externos y dirigir la ejecución de cada actividad aprobada.',
       },
       {
         id: 'obj-3',
         texto:
           'Aplicar encuesta de satisfacción con el fin de saber si los trabajadores estuvieron satisfechos con los programas y las actividades propuestas.',
+        responsable: 'Gerente',
+        funcionResponsable:
+          'Aplicar las encuestas al finalizar las actividades realizadas, consolidar los resultados y definir ajustes de mejora para el fortalecimiento continuo del plan.',
       },
     ],
     justificacion:
-      'El manual de procedimiento de bienestar social laboral se realiza porque los trabajadores son una parte fundamental de Frikaz S.A.S. y es importante tener en cuenta su bienestar, motivación y satisfacción dentro de la empresa. Además contar con un buen ambiente laboral ayuda a fortalecer las relaciones entre compañeros y a mejorar el trabajo en equipo.\n\nEste manual tiene como finalidad organizar las actividades de bienestar, como celebraciones de fechas especiales, espacios de integración, recreación y reconocimiento de los trabajadores. De esta manera, se busca fomentar la unión, mejorar el ambiente laboral y lograr que los trabajadores se sientan valorados y motivados en Frikaz S.A.S.',
+      'El Plan de Bienestar Social Laboral es indispensable para Frikaz S.A.S. porque el funcionamiento diario de una empresa de 10 trabajadores —distribuidos entre labores administrativas, operativas de planta y logística— depende directamente de la disposición, la salud, la coordinación y el compromiso humano de cada integrante. Sin una guía estructurada, las acciones dirigidas al personal corren el riesgo de realizarse de manera aislada, sin responder a necesidades reales ni guardar equilibrio frente a la capacidad financiera de una MiPyme.\n\nImplementar este manual permite transformar buenas intenciones en un procedimiento ordenado, viable y verificable. A través de acciones concretas y sostenibles durante la vigencia 2027, el plan busca aportar progresivamente al fortalecimiento de los siguientes aspectos dentro de Frikaz S.A.S.:\n\n• Clima organizacional: favorecer un ambiente de trabajo respetuoso, cercano y armónico mediante espacios de encuentro como los desayunos comunitarios mensuales y las conmemoraciones internas.\n• Relaciones interpersonales: promover el trato cordial, la empatía y la integración cotidiana entre compañeros de planta, logística y administración mediante pausas activas compartidas, juegos de mesa y celebraciones voluntarias de cumpleaños.\n• Motivación y sentido de pertenencia: fortalecer el vínculo afectivo con la empresa haciendo visibles las fechas significativas, el cuidado mutuo y la escucha periódica de las expectativas del equipo.\n• Reconocimiento al esfuerzo: valorar la dedicación, el cumplimiento y los valores laborales mediante la distinción del Trabajador del Mes con criterios claros y transparentes.\n• Hábitos saludables: incentivar la movilidad corporal, la descarga osteomuscular y el autocuidado cotidiano a través de las pausas activas en los puestos de trabajo.\n• Equilibrio entre la vida laboral, personal y familiar: respaldar el tiempo y bienestar del núcleo familiar mediante la flexibilidad horaria sujeta a autorización operativa y la entrega semestral de bonos familiares.\n• Habilidades personales y sociales: aportar conocimientos útiles para la vida cotidiana y la relación con los demás, especialmente mediante capacitaciones en finanzas personales y espacios participativos de diálogo.\n• Comunicación interna: facilitar canales directos y cercanos entre la Gerencia y los colaboradores para informar actividades, escuchar inquietudes y retroalimentar resultados.\n• Prevención del agotamiento y bienestar emocional: ofrecer respiros breves durante la jornada —como las pausas activas y los encuentros lúdicos semanales— orientados a reducir la tensión acumulada.\n• Participación y compromiso: involucrar activamente al personal desde el diagnóstico anual hasta la evaluación de satisfacción posterior a las actividades, fomentando la corresponsabilidad.\n• Trabajo en equipo: reforzar la cooperación transversal entre las áreas administrativa, operativa y logística en escenarios compartidos fuera de la presión inmediata de la tarea.\n• Satisfacción laboral: contribuir a que los colaboradores perciban interés genuino de la organización por sus necesidades y condiciones humanas de trabajo.\n• Productividad y cumplimiento de objetivos organizacionales: apoyar la estabilidad del equipo, la disposición hacia la calidad y el cumplimiento responsable de las metas de Frikaz S.A.S. en un entorno laboral saludable.\n\nDe este modo, el documento ofrece a la Gerencia un marco práctico y realista que articula el cuidado integral de los 10 colaboradores con la sostenibilidad financiera y operativa de la empresa.',
     alcance:
-      'El presente Manual de Bienestar al trabajador aplica a todos los colaboradores sin importar el cargo o el área de trabajo, por lo cual incluye al personal administrativo, operativos y logísticos. Su finalidad es establecer una guía con unos lineamientos correspondientes y actividades orientadas a mejorar la vida laboral del trabajador dentro y fuera de las instalaciones, esto contribuyendo al desarrollo profesional y personal de los trabajadores.\n\nEste manual contiene acciones de integración, reconocimientos, programas de bienestar, desarrollo personal, bienestar físico, mental y social, esto de acuerdo a las necesidades de cada colaborador que pertenece a la organización. Así mismo busca fomentar el sentido de pertenencia, el trabajo en equipo y sobre todo el compromiso con los objetivos organizacionales, contribuyendo al clima laboral y al crecimiento de Frikaz S.A.S.',
+      'El presente Manual y el Plan de Bienestar Social Laboral aplican a los 10 colaboradores de Frikaz S.A.S. vinculados en las áreas administrativa, operativa y logística, así como a las acciones dirigidas a sus núcleos familiares. Abarca las ocho dimensiones del bienestar y las nueve actividades institucionales definidas para la vigencia del año 2027 (enero a diciembre), desde el diagnóstico anual de necesidades hasta la evaluación de satisfacción y mejora, bajo la conducción y responsabilidad principal de la Gerente.',
+  },
+  responsablesPlan: {
+    cargoPrincipal: 'Gerente',
+    alcanceResponsabilidad:
+      'En coherencia con la estructura organizacional de Frikaz S.A.S. (10 trabajadores), la Gerente ejerce como única responsable principal de todas las actividades del Plan de Bienestar Social Laboral 2027, asumiendo su planeación, aprobación, ejecución, seguimiento y evaluación integral.',
+    responsabilidades: [
+      {
+        id: 'resp-1',
+        numero: 1,
+        texto: 'Diagnosticar las necesidades de los trabajadores.',
+        apartadoRelacionado: 'Matriz Detallada · Etapa anual de diagnóstico',
+      },
+      {
+        id: 'resp-2',
+        numero: 2,
+        texto: 'Estructurar los programas de bienestar.',
+        apartadoRelacionado: 'Programas de Bienestar · 8 Dimensiones y 9 Fichas',
+      },
+      {
+        id: 'resp-3',
+        numero: 3,
+        texto: 'Organizar el cronograma anual.',
+        apartadoRelacionado: 'Cronograma y Diagrama de Gantt 2027',
+      },
+      {
+        id: 'resp-4',
+        numero: 4,
+        texto: 'Definir y aprobar el presupuesto.',
+        apartadoRelacionado: 'Presupuesto General 2027',
+      },
+      {
+        id: 'resp-5',
+        numero: 5,
+        texto: 'Coordinar y supervisar la ejecución de cada actividad.',
+        apartadoRelacionado: 'Fichas de Actividades y Listas de Asistencia',
+      },
+      {
+        id: 'resp-6',
+        numero: 6,
+        texto: 'Gestionar posibles convenios o apoyos con entidades externas.',
+        apartadoRelacionado: 'Convenios y Alianzas Estratégicas',
+      },
+      {
+        id: 'resp-7',
+        numero: 7,
+        texto: 'Comunicar e invitar a los trabajadores a participar en las actividades.',
+        apartadoRelacionado: 'Matriz Detallada · Convocatoria e Invitaciones',
+      },
+      {
+        id: 'resp-8',
+        numero: 8,
+        texto: 'Hacer seguimiento al cumplimiento de las acciones programadas.',
+        apartadoRelacionado: 'Seguimiento e Indicadores',
+      },
+      {
+        id: 'resp-9',
+        numero: 9,
+        texto: 'Evaluar los resultados y la satisfacción de los trabajadores.',
+        apartadoRelacionado: 'Encuestas de Satisfacción y Consolidado',
+      },
+      {
+        id: 'resp-10',
+        numero: 10,
+        texto: 'Realizar ajustes o mejoras para fortalecer el plan de bienestar.',
+        apartadoRelacionado: 'Plan de Mejora Continua y Cierre Anual',
+      },
+    ],
   },
   normograma: [
     {
@@ -555,10 +634,10 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
     empresa: 'Frikaz S.A.S.',
     codigo: 'TH-MDB-01',
     version: '01',
-    fecha: '13/11/2026',
-    responsable: 'Gestión del Talento Humano',
+    fecha: '27/11/2026',
+    responsable: 'Gerente',
     objetivo:
-      'Estandarizar paso a paso la planificación, aprobación, ejecución, seguimiento y evaluación del Procedimiento de Bienestar Social Laboral en Frikaz S.A.S.',
+      'Estandarizar paso a paso la planificación, aprobación, ejecución, seguimiento y evaluación del Procedimiento de Bienestar Social Laboral en Frikaz S.A.S., bajo la conducción directa de la Gerente.',
   },
   proceso: [
     {
@@ -566,42 +645,42 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'oval',
       actividad: 'Inicio',
       descripcion:
-        'Talento Humano da apertura formal al ciclo anual del procedimiento revisando el Manual vigente, confirmando los objetivos y habilitando la ruta documental para iniciar la fase de diagnóstico con cobertura en todas las áreas.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'N/A',
+        'Al comenzar la vigencia anual, la Gerente da apertura formal al ciclo del Plan de Bienestar Social Laboral revisando el manual vigente, los objetivos y las normas aplicables, y habilita los formatos de registro para organizar las actividades de los 10 trabajadores de las áreas administrativa, operativa y logística.',
+      responsable: 'Gerente',
+      registroDocumento: 'Manual vigente',
       isDecision: false,
       nextTargetId: 'step-2',
     },
     {
       id: 'step-2',
       symbol: 'document',
-      actividad: 'Diseñar y aplicar diagnóstico de necesidades',
+      actividad: 'Diseñar y aplicar diagnóstico anual de necesidades',
       descripcion:
-        'Talento Humano elabora el instrumento diagnóstico con preguntas sobre las dimensiones social, mental, física, familiar, económica y emocional, y lo distribuye al personal administrativo, operativo y logístico en horarios adecuados. Se busca recoger información representativa y confidencial sobre sus necesidades reales.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'Instrumento diagnóstico',
+        'Una vez al año, al inicio de la planeación anual, la Gerente elabora y aplica un cuestionario breve y confidencial a los 10 trabajadores de Frikaz S.A.S. (no mensualmente ni después de cada jornada) para conocer sus necesidades, intereses y preferencias en las dimensiones física, mental, financiera, familiar, social, de horarios, incentivos y reconocimientos.',
+      responsable: 'Gerente',
+      registroDocumento: 'Instrumento diagnóstico anual',
       isDecision: false,
       nextTargetId: 'step-3',
     },
     {
       id: 'step-3',
       symbol: 'document',
-      actividad: 'Recolección y tabulación del diagnóstico',
+      actividad: 'Recolección y tabulación del diagnóstico anual',
       descripcion:
-        'Talento Humano recopila los cuestionarios diligenciados, verifica que correspondan al total del personal convocado y organiza las respuestas en una matriz de tabulación. Con esto se asegura contar con datos depurados y clasificados por área y dimensión.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'Matriz de tabulación',
+        'Tras la aplicación anual única, la Gerente recopila los cuestionarios diligenciados, verifica la participación del personal convocado y organiza las respuestas en una matriz de tabulación por área y dimensión, asegurando datos completos y depurados para la planeación del año.',
+      responsable: 'Gerente',
+      registroDocumento: 'Matriz de tabulación anual',
       isDecision: false,
       nextTargetId: 'step-4',
     },
     {
       id: 'step-4',
       symbol: 'cylinder',
-      actividad: 'Elaborar informe de resultados del diagnóstico',
+      actividad: 'Elaborar informe de resultados del diagnóstico anual',
       descripcion:
-        'Talento Humano analiza los datos tabulados, identifica las necesidades prioritarias por dimensión y redacta el informe diagnóstico, guardando la información consolidada en la base de datos. Se verifica que las conclusiones reflejen fielmente los resultados obtenidos para orientar los programas.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'Base de datos e informe',
+        'Con la información tabulada una vez al año, la Gerente analiza las prioridades de los 10 colaboradores, redacta el informe diagnóstico y guarda el consolidado en la base de datos. Con este insumo verifica qué actividades requieren mantenerse o ajustarse antes de estructurar el plan anual.',
+      responsable: 'Gerente',
+      registroDocumento: 'Informe diagnóstico anual y base de datos',
       isDecision: false,
       nextTargetId: 'step-5',
     },
@@ -610,9 +689,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'document',
       actividad: 'Definir programas, actividades e incentivos',
       descripcion:
-        'Con base en el informe diagnóstico, Talento Humano estructura los programas de bienestar, celebraciones, espacios de integración, recreación e incentivos, detallando objetivos, metodología y cobertura. Se verifica que la propuesta atienda las necesidades identificadas y cumpla la normativa aplicable.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'Plan de Bienestar',
+        'Con base en el diagnóstico anual, la Gerente estructura las actividades de Frikaz S.A.S. (pausas activas, juegos de mesa, capacitaciones financieras, bonos familiares, desayunos comunitarios, celebraciones del Día de la Mujer y del Hombre, flexibilidad de horarios sujeta a autorización y necesidad operativa, cumpleaños autogestionados y Trabajador del Mes), precisando objetivos, metodología y criterios.',
+      responsable: 'Gerente',
+      registroDocumento: 'Plan de Bienestar 2027',
       isDecision: false,
       nextTargetId: 'step-6',
     },
@@ -621,9 +700,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'diamond',
       actividad: '¿Los programas son aprobados?',
       descripcion:
-        'La Gerencia revisa la propuesta del Plan de Bienestar evaluando su pertinencia frente a las necesidades del personal, el alcance para todas las áreas y el cumplimiento de los lineamientos internos. Si aprueba, se avanza al cronograma; si solicita cambios, se remite a ajuste.',
-      responsable: 'Gerencia',
-      registroDocumento: 'Acta de revisión',
+        'La Gerente evalúa formalmente la propuesta del Plan de Bienestar verificando que responda al diagnóstico anual, cubra equitativamente a las áreas administrativa, operativa y logística y sea viable dentro de la escala de la empresa. Si cumple, se pasa al cronograma; si requiere cambios, se ajusta la propuesta.',
+      responsable: 'Gerente',
+      registroDocumento: 'Acta de revisión de programas',
       isDecision: true,
       yesLabel: 'SÍ',
       noLabel: 'NO',
@@ -635,9 +714,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'rectangle',
       actividad: 'Ajustar programas',
       descripcion:
-        'Talento Humano revisa las observaciones emitidas por la Gerencia y modifica los objetivos, metodologías o actividades señaladas en la propuesta. Una vez corregida, verifica que atienda todos los comentarios antes de presentarla nuevamente para aprobación.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'Plan ajustado',
+        'La Gerente corrige los objetivos, alcances o metodologías de las actividades observadas, verificando que la versión actualizada conserve coherencia con las necesidades del equipo y con los recursos internos disponibles antes de aprobarla.',
+      responsable: 'Gerente',
+      registroDocumento: 'Plan de Bienestar ajustado',
       isDecision: false,
       isAdjustment: true,
       nextTargetId: 'step-6',
@@ -647,9 +726,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'rectangle',
       actividad: 'Elaborar cronograma',
       descripcion:
-        'Talento Humano asigna fechas, horarios, duración y periodicidad a las actividades aprobadas, consultando los turnos de producción, administración y logística. Se busca organizar un calendario equilibrado que respete los tiempos de trabajo y descanso del personal.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'Cronograma de actividades',
+        'La Gerente asigna fechas, frecuencias, horarios y espacios internos en el calendario anual 2027 (pausas activas diarias, juegos de mesa semanales, desayunos y Trabajador del Mes mensuales, finanzas trimestrales, bonos semestrales y fechas especiales), coordinando los turnos de planta, logística y administración sin afectar la operación.',
+      responsable: 'Gerente',
+      registroDocumento: 'Cronograma y Gantt 2027',
       isDecision: false,
       nextTargetId: 'step-9',
     },
@@ -658,8 +737,8 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'diamond',
       actividad: '¿El cronograma es aprobado?',
       descripcion:
-        'La Gerencia revisa las fechas y horarios propuestos frente a la programación operativa de la empresa para confirmar que no afecten la producción ni excluyan turnos. Si está conforme, aprueba el cronograma para su costeo; de lo contrario, indica las reprogramaciones necesarias.',
-      responsable: 'Gerencia',
+        'La Gerente valida que las fechas y horarios programados no interfieran con picos operativos ni excluyan turnos, y verifica las condiciones para otorgar flexibilidad horaria según necesidad operativa. Si es viable, se aprueba el cronograma; si hay cruces, se reprograman las fechas.',
+      responsable: 'Gerente',
       registroDocumento: 'Cronograma revisado',
       isDecision: true,
       yesLabel: 'SÍ',
@@ -672,8 +751,8 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'rectangle',
       actividad: 'Ajustar cronograma',
       descripcion:
-        'Talento Humano coordina con las áreas operativas, administrativas y logísticas nuevas fechas u horarios para resolver los cruces señalados por la Gerencia. Se verifica que el calendario actualizado mantenga todas las actividades aprobadas y conserve su viabilidad operativa.',
-      responsable: 'Talento Humano',
+        'La Gerente reubica fechas u horarios en el calendario anual consultando la carga de producción, entregas logísticas y labores administrativas, verificando que todas las actividades mantengan su frecuencia y cobertura para los 10 trabajadores.',
+      responsable: 'Gerente',
       registroDocumento: 'Cronograma ajustado',
       isDecision: false,
       isAdjustment: true,
@@ -684,9 +763,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'rectangle',
       actividad: 'Elaborar presupuesto de los programas',
       descripcion:
-        'El Contador, junto con Talento Humano, estima los costos unitarios y totales de materiales, logística, refrigerios, espacios e incentivos de cada actividad del cronograma, verificando posibles apoyos de la Caja de Compensación. Con ello se consolida una propuesta financiera exacta y justificada.',
-      responsable: 'Contador',
-      registroDocumento: 'Presupuesto',
+        'La Gerente consolida los costos unitarios y totales de guías de pausas activas, juegos reutilizables, cartillas financieras, bonos familiares, desayunos comunitarios, detalles conmemorativos y reconocimientos del Trabajador del Mes (manteniendo sin gasto directo empresarial la flexibilidad horaria y cumpleaños voluntarios), revisando posibles apoyos externos gratuitos.',
+      responsable: 'Gerente',
+      registroDocumento: 'Presupuesto General 2027',
       isDecision: false,
       nextTargetId: 'step-12',
     },
@@ -695,9 +774,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'diamond',
       actividad: '¿El presupuesto es aprobado?',
       descripcion:
-        'La Gerencia revisa los montos y rubros presupuestales frente a la disponibilidad financiera de la empresa y el beneficio esperado para los trabajadores. Si aprueba los recursos, se continúa con la asignación de responsables; si requiere reducciones, se devuelve a ajuste.',
-      responsable: 'Gerencia',
-      registroDocumento: 'Presupuesto',
+        'La Gerente revisa la disponibilidad financiera real de Frikaz S.A.S. para autorizar la ejecución de los rubros propuestos —incluidos bonos, desayunos y reconocimientos del Trabajador del Mes sujetos a aprobación presupuestal—. Si se aprueba, se avanza a la organización operativa; si no, se optimizan rubros.',
+      responsable: 'Gerente',
+      registroDocumento: 'Presupuesto aprobado por Gerencia',
       isDecision: true,
       yesLabel: 'SÍ',
       noLabel: 'NO',
@@ -709,8 +788,8 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'rectangle',
       actividad: 'Ajustar presupuesto',
       descripcion:
-        'Talento Humano y el área contable revisan cotizaciones, cantidades o alternativas con aliados y convenios para optimizar los costos según las indicaciones de la Gerencia. Se verifica que la nueva propuesta financiera siga permitiendo cumplir los objetivos de cada actividad.',
-      responsable: 'Talento Humano',
+        'La Gerente revisa cantidades, cotizaciones y opciones de apoyo con entidades externas como Caja de Compensación, SENA o ARL para ajustar los gastos a la capacidad financiera de la MiPyme sin desvirtuar el propósito de las actividades.',
+      responsable: 'Gerente',
       registroDocumento: 'Presupuesto ajustado',
       isDecision: false,
       isAdjustment: true,
@@ -719,11 +798,11 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
     {
       id: 'step-14',
       symbol: 'cylinder',
-      actividad: 'Definir responsables',
+      actividad: 'Organizar recursos, apoyos y logística',
       descripcion:
-        'Talento Humano designa a los líderes y apoyos encargados de coordinar la logística, los recursos y el acompañamiento de cada actividad, dejando el registro en la base de datos. Se confirma que cada jornada cuente con responsables claros que conozcan sus funciones y medidas de seguridad.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'Base de datos',
+        'Con el presupuesto aprobado, la Gerente prepara los materiales requeridos en sede (guías, juegos, cartillas, bonos o alimentos), verifica las condiciones de seguridad e higiene del espacio y gestiona las consultas de convenios o apoyos externos cuando aplique, registrando el estado en la base de datos.',
+      responsable: 'Gerente',
+      registroDocumento: 'Base de datos de recursos y convenios',
       isDecision: false,
       nextTargetId: 'step-15',
     },
@@ -732,9 +811,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'cylinder',
       actividad: 'Establecer participantes',
       descripcion:
-        'Talento Humano depura la base de datos de trabajadores activos para definir los convocados a cada actividad, asegurando inclusión equitativa del personal administrativo, operativo y logístico. Se verifica que el listado esté actualizado y considere turnos o condiciones particulares.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'Base de datos',
+        'La Gerente actualiza el listado de los 10 trabajadores activos de las áreas administrativa, operativa y logística y define los convocados a cada jornada (y sus familias cuando aplique, como en los bonos semestrales), verificando criterios objetivos de equidad y disponibilidad de turnos.',
+      responsable: 'Gerente',
+      registroDocumento: 'Listado de participantes convocados',
       isDecision: false,
       nextTargetId: 'step-16',
     },
@@ -743,9 +822,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'document',
       actividad: 'Enviar invitaciones',
       descripcion:
-        'Talento Humano redacta y difunde las invitaciones con la fecha, hora, lugar, objetivo y recomendaciones de cada jornada a través de los canales internos dentro del horario laboral. Se verifica que la convocatoria llegue oportunamente a todas las áreas para facilitar la participación.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'Invitaciones',
+        'Dentro de la jornada laboral y con la debida anticipación, la Gerente comunica a los colaboradores la fecha, horario, lugar, objetivo y recomendaciones de cada actividad o beneficio (incluyendo las condiciones para solicitar flexibilidad horaria o participar en celebraciones), verificando que todo el personal quede enterado.',
+      responsable: 'Gerente',
+      registroDocumento: 'Invitaciones y comunicados internos',
       isDecision: false,
       nextTargetId: 'step-17',
     },
@@ -754,9 +833,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'document',
       actividad: 'Ejecutar los programas de bienestar',
       descripcion:
-        'Los responsables asignados alistan el espacio y los insumos requeridos, reciben a los asistentes y desarrollan la agenda prevista promoviendo un trato digno, seguro y respetuoso. Durante la jornada se verifica el cumplimiento del programa y las condiciones adecuadas de higiene y convivencia.',
-      responsable: 'Responsables asignados',
-      registroDocumento: 'Plan de Bienestar',
+        'En las fechas programadas, la Gerente coordina y supervisa el desarrollo de cada actividad en un entorno respetuoso, seguro e higiénico: guía o verifica pausas activas, habilita juegos de mesa, desarrolla capacitaciones financieras, entrega bonos y reconocimientos aprobados, facilita desayunos, conmemora fechas especiales y autoriza flexibilidad horaria o espacios de cumpleaños.',
+      responsable: 'Gerente',
+      registroDocumento: 'Plan de Bienestar y actas de ejecución',
       isDecision: false,
       nextTargetId: 'step-18',
     },
@@ -765,9 +844,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'document',
       actividad: 'Aplicar encuesta de satisfacción y registro',
       descripcion:
-        'Al finalizar cada actividad, Talento Humano recoge el listado de asistencia firmado, toma las evidencias fotográficas y aplica la encuesta de satisfacción de manera confidencial. Se verifica que los soportes queden completos para conocer el nivel de agrado y participación.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'Lista, encuesta y fotos',
+        'Después de realizar las actividades del plan, la Gerente diligencia o recopila la lista de asistencia firmada, conserva las evidencias fotográficas y aplica la encuesta de satisfacción confidencial (en línea o impresa) para conocer la percepción, utilidad y sugerencias de los trabajadores sobre la actividad realizada.',
+      responsable: 'Gerente',
+      registroDocumento: 'Lista de asistencia, encuesta de satisfacción y evidencias',
       isDecision: false,
       nextTargetId: 'step-19',
     },
@@ -776,9 +855,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'document',
       actividad: 'Elaborar informes de resultados',
       descripcion:
-        'Talento Humano tabula las encuestas de satisfacción, calcula indicadores de asistencia, cumplimiento y percepción frente al cronograma y presupuesto, y redacta el informe final con oportunidades de mejora. Se verifica la consistencia entre las cifras reportadas y los soportes archivados.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'Indicadores e informe',
+        'La Gerente consolida las respuestas de satisfacción, calcula los indicadores de asistencia, cumplimiento del cronograma y ejecución presupuestal real, y documenta oportunidades de mejora para ajustar futuras jornadas o el plan del siguiente año, verificando consistencia con los soportes archivados.',
+      responsable: 'Gerente',
+      registroDocumento: 'Informe de resultados y plan de mejora',
       isDecision: false,
       nextTargetId: 'step-20',
     },
@@ -787,9 +866,9 @@ export const INITIAL_BIENESTAR_STATE: BienestarState = {
       symbol: 'oval',
       actividad: 'FIN',
       descripcion:
-        'Talento Humano confirma que todas las actividades del ciclo finalizaron y verifica el archivo ordenado de actas, cronogramas, presupuestos, listas de asistencia, encuestas e informes. Con esto se cierra formalmente el procedimiento y se dejan insumos para el siguiente periodo.',
-      responsable: 'Talento Humano',
-      registroDocumento: 'N/A',
+        'Al finalizar el periodo anual 2027, la Gerente confirma el cierre de las actividades programadas y verifica el archivo ordenado de cronogramas, presupuestos aprobados, listas de asistencia, encuestas de satisfacción e informes, dejando la trazabilidad completa para el próximo diagnóstico anual.',
+      responsable: 'Gerente',
+      registroDocumento: 'Archivo anual del Plan de Bienestar',
       isDecision: false,
     },
   ],
